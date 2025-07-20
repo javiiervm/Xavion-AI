@@ -1,5 +1,6 @@
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 import torch
+from chatbot.config import GENERATION_CONFIG
 
 SEP = "<|endoftext|>"   # Special token used as separator in GODEL
 
@@ -42,16 +43,14 @@ def generate_response(model, tokenizer, input_text, device="cpu"):
                                 # add_special_tokens=True (default True), adds tokens the model may need
     ).to(device)    # Moves the tensor (tokenized input) to the same computing unit than the model, "cpu" for processor or "cuda" to gpu
 
+    # Get generation config based on current mode
+    mode = GENERATION_CONFIG["mode"]
+    generate_params = GENERATION_CONFIG[mode]
+
     # Generate reponse with controlled sampling
     output_tokens = model.generate(
         input_tokens,           # Input tensor with the prompt's tokens
-        max_length = 512,       # Max tokens that can be generated (input + output)
-        do_sample = True,       # If true, uses random sampling instead of greedy decoding
-        temperature = 0.7,      # Manages how random predicitions are
-        top_p = 0.9,            # Applies nucleus sampling: chooses inside a group of tokens with an accumulated probability >= 0.9
-        top_k = 50              # Limits next token to the 50 more probable
-                                # repetition_penalty=..., used to punish for word repetition
-                                # num_return_sequences=1, how many answers generate (default 1)
+        **generate_params       # Parameters for generation
     )
 
     # Converts the sequence of generated tokens to human-understandable text
