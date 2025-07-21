@@ -1,14 +1,12 @@
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 import torch
 
-# AI model that is going to be used (Microsoft GODEL)
-MODEL_PATH = "./GODEL-v1_1-base-seq2seq"
-
-def load_model_and_tokenizer(device = None):
+def load_model_and_tokenizer(MODEL_PATH, device=None):
     """
     This function loads the GODEL model and its tokenizer from Hugging Face
     
     Args:
+        MODEL_PATH (str): Path to the model on Hugging Face
         device (str): "cuda" or "cpu", if not specified it is automatically detected
 
     Returns:
