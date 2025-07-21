@@ -3,3 +3,4 @@ __pycache__/
 *.pyc
 GODEL-v1_1-base-seq2seq/
 GODEL-v1_1-large-seq2seq/
+data/
