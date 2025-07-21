@@ -1,22 +1,14 @@
 from chatbot.model import load_model_and_tokenizer
-from chatbot.logic import prepare_input, generate_response, SEP
 from chatbot.config import (
     GENERATION_CONFIG,
-    switch_generation_mode,
-    BOT_IDENTITY
+    switch_generation_mode
 )
 from chatbot.utils import (
-    detect_intent,
-    load_knowledge,
-    extract_keyword,
-    get_knowledge,
-    load_user_memory,
-    detect_manual_definition,
-    format_identity
+    load_knowledge, 
+    load_memory
 )
 
 import os
-import json
 
 RESET = "\033[0m"
 BOLD = "\033[1m"
@@ -24,10 +16,15 @@ GREEN = "\033[92m"
 RED = "\033[91m"
 YELLOW = "\033[93m"
 
-USER_MEMORY_PATH = "data/user_memory.json"
+# AI model that is going to be used (Microsoft GODEL)
+MODEL_PATH = "./GODEL-v1_1-large-seq2seq"
+DEVICE = "cpu"  # Device can be 'cpu', 'cuda' or None (auto)
 
-KNOWLEDGE_DB = load_knowledge()
-USER_MEMORY = load_user_memory(USER_MEMORY_PATH)
+MEMORY_PATH = "data/memory.json"
+KNOWLEDGE_PATH = "data/knowledge.json"
+
+KNOWLEDGE_DB = load_knowledge(KNOWLEDGE_PATH)
+USER_MEMORY = load_memory(MEMORY_PATH)
 
 def switch_debug_mode(current):
     return not current
@@ -44,7 +41,7 @@ def start_chat(model, tokenizer, device, debug_mode):
         match user_input.lower():
             case "exit":
                 print(f"\n{BOLD}🤖 Goodbye!{RESET}\n")
-                break
+                return True
             case "help":
                 print("Available commands:")
                 print(f"- {BOLD}'help'{RESET}: Show this command list")
@@ -70,71 +67,14 @@ def start_chat(model, tokenizer, device, debug_mode):
                 debug_mode = switch_debug_mode(debug_mode)
                 print(f"{BOLD}🔁 Debug mode switched to: {GREEN}{'Enabled' if debug_mode else 'Disabled'}\n{RESET}")
             case "reset":
-                start_chat(model, tokenizer, device, debug_mode)
-                return
+                return False
             case _:
-                # Guardar entrada del usuario
-                conversation_history.append(f"User: {user_input}")
-                recent_conversation = f" {SEP} ".join(conversation_history[-6:])
-
-                # Detectar intención
-                intent = detect_intent(user_input)
-                if debug_mode:
-                    print(f"{BOLD}🔎 Intent detected: {GREEN}{intent}{RESET}")
-
-                # Reglas base de comportamiento
-                BASE_RULES = (
-                    "Do not repeat the user's input. "
-                    "Use the knowledge provided. "
-                    "Always end with a follow-up question. "
-                    "Be clear and concise. "
-                    "If you don't know the answer, say so politely."
-                )
-
-                # Construcción de instrucción
-                instruction_map = {
-                    "definition": f"Define the given term in a full sentence. {BASE_RULES}",
-                    "knowledge_query": f"Answer the user's factual question. {BASE_RULES}",
-                    "greeting": "Respond to the user's greeting.",
-                    "emotional": "Respond empathetically.",
-                    "conversation": "Continue the conversation."
-                }
-                instruction = instruction_map.get(intent, "Continue the conversation.")
-
-                # Obtener conocimiento del término
-                term_knowledge = ""
-                if intent in ["definition", "knowledge_query"]:
-                    keyword = extract_keyword(user_input)
-                    term_knowledge = get_knowledge(keyword, KNOWLEDGE_DB, USER_MEMORY)
-                    if debug_mode:
-                        print(f"{BOLD}🔎 Keyword: {GREEN}{keyword}{RESET}")
-                        print(f"{BOLD}🔎 Knowledge: {GREEN}{term_knowledge or 'None'}{RESET}")
-
-                if intent in ["definition", "knowledge_query"] and not term_knowledge:
-                    instruction += " If the concept is unknown, say so politely and ask the user to explain it."
-
-                # Construir prompt para GODEL
-                input_text = prepare_input(instruction, term_knowledge, recent_conversation)
-                if debug_mode:
-                    print(f"{BOLD}📝 Instruction: {GREEN}{instruction}{RESET}")
-
-                # Generar respuesta
-                response = generate_response(model, tokenizer, input_text, device=device)
-
-                # Guardar conocimiento si el usuario definió algo manualmente
-                defined_term = detect_manual_definition(user_input)
-                if defined_term and defined_term not in USER_MEMORY:
-                    USER_MEMORY[defined_term] = {"knowledge": user_input.strip()}
-                    with open(USER_MEMORY_PATH, "w", encoding="utf-8") as f:
-                        json.dump(USER_MEMORY, f, ensure_ascii=False, indent=2)
-                    print(f"\n{BOLD}📚 Saved new knowledge: {GREEN}'{defined_term}'{RESET}")
-
-                # Mostrar respuesta y actualizar historial
-                print(f"\n{BOLD}🤖 {response}{RESET}\n")
-                conversation_history.append(f"Bot: {response}")
+                pass
 
 if __name__ == "__main__":
-    print("Loading ProtoAI, please wait...")
-    model, tokenizer, device = load_model_and_tokenizer()
+    print("Loading ProtoAI, please wait...", flush=True)
+    model, tokenizer, device = load_model_and_tokenizer(MODEL_PATH, DEVICE)
     debug_mode = False
-    start_chat(model, tokenizer, device, debug_mode)
+    chat_finished = False
+    while not chat_finished:
+        chat_finished = start_chat(model, tokenizer, device, debug_mode)
