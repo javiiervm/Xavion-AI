@@ -11,12 +11,15 @@ from chatbot.logic import (
 from chatbot.utils import (
     load_knowledge, 
     load_memory,
-    extract_keywords
+    extract_keywords,
+    detect_intent,
+    extract_teaching
 )
 
 from chatbot.testLogic import generate
 
 import os
+import json
 
 RESET = "\033[0m"
 BOLD = "\033[1m"
@@ -79,9 +82,19 @@ def start_chat(model, tokenizer, device, debug_mode):
             case _:
                 # Update conversation history
                 conversation_history.append(f"'{user_input}'")
-                
-                # Instruction for a chitchat task
-                instruction = f'Instruction: given a dialog context, you need to response empathically.'
+
+                # Detect user intent
+                intent = detect_intent(user_input)
+                if debug_mode:
+                    print(f"{BOLD}🔎 Intent detected: {GREEN}{intent}{RESET}")
+
+                # Build the instruction
+                instruction_map = {
+                    "definition": f"define the given term in a full sentence and provide examples if possible.",
+                    "teaching": f"thank the user for teaching the term.",
+                    "conversation": f"given a dialog context, you need to response empathically and ask questions to continue the conversation."
+                }
+                instruction = 'Instruction: ' + instruction_map.get(intent, "given a dialog context, you need to response empathically.")
                 if debug_mode:
                     print(f"{BOLD}📝 Instruction: {GREEN}{instruction}{RESET}")
 
@@ -105,13 +118,23 @@ def start_chat(model, tokenizer, device, debug_mode):
                                 print(f"🔎 Keyword '{keyword}': {USER_MEMORY[keyword]["knowledge"]}.{RESET}")
                             knowledge += USER_MEMORY[keyword]["knowledge"] + "\n"
                         else:
-                            print(f"{BOLD}⚠️ Keyword '{keyword}' not found in knowledge base.{RESET}")
+                            if debug_mode:
+                                print(f"{BOLD}⚠️ Keyword '{keyword}' not found in knowledge base.{RESET}")
                 else:
                     if debug_mode:
                         print(f"{BOLD}⚠️ No keywords detected in user input.{RESET}")
 
                 if debug_mode:
                     print(f"{BOLD}📝 Generating response...{RESET}")
+
+                if intent == "teaching":
+                    # Add to memory new things learnt
+                    term, definition = extract_teaching(user_input)
+                    if term and definition:
+                        USER_MEMORY[term] = {"knowledge": definition}
+                        with open(MEMORY_PATH, "w", encoding="utf-8") as f:
+                            json.dump(USER_MEMORY, f, ensure_ascii=False, indent=2)
+                        print(f"\n{BOLD}✅ New knowledge added to memory: {GREEN}{term}{RESET}")
 
                 # Generate a response
                 response = generate(instruction, knowledge, conversation_history, model, tokenizer)
