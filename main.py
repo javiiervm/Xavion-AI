@@ -10,7 +10,8 @@ from chatbot.logic import (
 )
 from chatbot.utils import (
     load_knowledge, 
-    load_memory
+    load_memory,
+    extract_keywords
 )
 
 from chatbot.testLogic import generate
@@ -81,13 +82,39 @@ def start_chat(model, tokenizer, device, debug_mode):
                 
                 # Instruction for a chitchat task
                 instruction = f'Instruction: given a dialog context, you need to response empathically.'
+                if debug_mode:
+                    print(f"{BOLD}📝 Instruction: {GREEN}{instruction}{RESET}")
 
                 # Leave the knowldge empty
                 knowledge = ''
 
+                # Extract keywords from user input
+                keywords = extract_keywords(user_input)
+                
+                # Search for knowledge
+                if keywords:
+                    if debug_mode:
+                        print(f"{BOLD}🔎 Keywords detected: {GREEN}{keywords}{RESET}")
+                    for keyword in keywords:
+                        if keyword in KNOWLEDGE_DB:
+                            if debug_mode:
+                                print(f"🔎 Keyword '{keyword}': {KNOWLEDGE_DB[keyword]["knowledge"]}.{RESET}")
+                            knowledge += KNOWLEDGE_DB[keyword]["knowledge"] + "\n"
+                        elif keyword in USER_MEMORY:
+                            if debug_mode:
+                                print(f"🔎 Keyword '{keyword}': {USER_MEMORY[keyword]["knowledge"]}.{RESET}")
+                            knowledge += USER_MEMORY[keyword]["knowledge"] + "\n"
+                        else:
+                            print(f"{BOLD}⚠️ Keyword '{keyword}' not found in knowledge base.{RESET}")
+                else:
+                    if debug_mode:
+                        print(f"{BOLD}⚠️ No keywords detected in user input.{RESET}")
+
+                if debug_mode:
+                    print(f"{BOLD}📝 Generating response...{RESET}")
+
                 # Generate a response
                 response = generate(instruction, knowledge, conversation_history, model, tokenizer)
-
 
                 # Update conversation history
                 conversation_history.append(f"'{response}'")
