@@ -27,6 +27,14 @@ BOT_IDENTITY = {
     ]
 }
 
+BASE_RULES = (
+    "Do not repeat the user's input. "
+    "Use the knowledge provided. "
+    "Always end with a follow-up question. "
+    "Be clear and concise. "
+    "If you don't know the answer, say so politely."
+)
+
 def switch_generation_mode():
     current = GENERATION_CONFIG["mode"]
     GENERATION_CONFIG["mode"] = "precise" if current == "creative" else "creative"
