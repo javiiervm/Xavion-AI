@@ -13,6 +13,8 @@ from chatbot.utils import (
     load_memory
 )
 
+from chatbot.testLogic import generate
+
 import os
 
 RESET = "\033[0m"
@@ -74,6 +76,26 @@ def start_chat(model, tokenizer, device, debug_mode):
             case "reset":
                 return False
             case _:
+                # Update conversation history
+                conversation_history.append(f"'{user_input}'")
+                
+                # Instruction for a chitchat task
+                instruction = f'Instruction: given a dialog context, you need to response empathically.'
+
+                # Leave the knowldge empty
+                knowledge = ''
+
+                # Generate a response
+                response = generate(instruction, knowledge, conversation_history, model, tokenizer)
+
+
+                # Update conversation history
+                conversation_history.append(f"'{response}'")
+
+                # Print response
+                print(f"\n{BOLD}🤖 {response}{RESET}\n")
+
+                """
                 # Add user input to conversation history
                 conversation_history.append(f"User: {user_input}")
                 recent_conversation = f" {SEP} ".join(conversation_history[-6:])
@@ -106,6 +128,7 @@ def start_chat(model, tokenizer, device, debug_mode):
 
                 # Print response
                 print(f"\n{BOLD}🤖 {response}{RESET}\n")
+                """
 
 
 if __name__ == "__main__":
