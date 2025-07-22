@@ -1,38 +1,70 @@
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+from chatbot.config import GENERATION_CONFIG
+
+def generate(instruction, knowledge, dialog, model, tokenizer):
+    """
+    Generates a response using a language model based on provided instruction, knowledge and dialog history.
+    
+    Args:
+        instruction (str): The instruction/task for the model to follow
+        knowledge (str): Additional knowledge/context to inform the response
+        dialog (list): List of previous conversation turns
+        model: The language model used for generation
+        tokenizer: The tokenizer associated with the model
+    
+    Returns:
+        str: The generated response from the model
+    """
+    # Get generation configuration mode and parameters from config
+    mode = GENERATION_CONFIG["mode"]
+    generate_params = GENERATION_CONFIG[mode]
+    
+    # Add knowledge marker if knowledge is provided
+    if knowledge != '':
+        knowledge = '[KNOWLEDGE] ' + knowledge
+    
+    # Join dialog history with EOS separator
+    dialog = ' EOS '.join(dialog)
+    
+    # Construct the full query by combining instruction, context and knowledge
+    query = f"{instruction} [CONTEXT] {dialog} {knowledge}"
+    
+    # Tokenize the query into model input format
+    # return_tensors="pt" returns PyTorch tensors
+    input_ids = tokenizer(f"{query}", return_tensors="pt").input_ids
+    
+    # Generate response using the model with specified parameters
+    outputs = model.generate(input_ids, **generate_params)
+    
+    # Decode the generated token ids back to text
+    # skip_special_tokens=True removes special tokens like PAD, EOS etc.
+    output = tokenizer.decode(outputs[0], skip_special_tokens=True)
+    
+    return output
+
+
+
+
+
+
+"""
+
+|=================|
+|LOGIC INFORMATION|
+|=================|
+
+
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 import torch
 from chatbot.config import GENERATION_CONFIG
 
 SEP = "<|endoftext|>"   # Special token used as separator in GODEL
 
 def prepare_input(instruction, knowledge, conversation):
-    """
-    Formats the input according to the format GODEL is expecting
-
-    Args:
-        instruction (str): What the model has to do
-        knowledge (str): External information (may be empty)
-        conversation (str): Recent dialogue with the user
-
-    Returns:
-        str: input formatted as text
-    """
     inpt = f"Instruction: {instruction} {SEP} Knowledge: {knowledge} {SEP} Conversation: {conversation}"
     return inpt
 
 def generate_response(model, tokenizer, input_text, device="cpu"):
-    """
-    Generates a reponse based on the structured input
-
-    Args:
-        model: AI model already loaded (GODEL in this case)
-        tokenizer: compatible tokenizer
-        input_text (str): Input formatted as a string
-        device (str): "cuda" or "cpu"
-
-    Returns:
-        str: Generated reponse by the model
-    """
-
     # Tokenize input: convert the text to a sequence of token IDs that the model can process
     input_tokens = tokenizer.encode(
         input_text,             # Text that is going to be converted
@@ -61,3 +93,5 @@ def generate_response(model, tokenizer, input_text, device="cpu"):
                                     # output_ids, output tensor from generate()
         )
     return reponse
+
+"""

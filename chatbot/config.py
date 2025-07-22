@@ -1,5 +1,11 @@
 GENERATION_CONFIG = {
-    "mode": "creative",  # can be "creative" or "precise"
+    "mode": "default",  # can be "default", "creative" or "precise"
+    "default": {
+        "max_length": 128,
+        "min_length": 8,
+        "top_p": 0.9,
+        "do_sample": True
+    },
     "creative": {
         "do_sample": True,
         "temperature": 0.7,
@@ -16,7 +22,7 @@ GENERATION_CONFIG = {
 }
 
 BOT_IDENTITY = {
-    "name": "ProtoAI",
+    "name": "Xavion",
     "purpose": "I am an AI assistant here to help users understand concepts and answer questions.",
     "rules": [
         "Never repeat the user's input nor your last answer.",
@@ -37,7 +43,12 @@ BASE_RULES = (
 
 def switch_generation_mode():
     current = GENERATION_CONFIG["mode"]
-    GENERATION_CONFIG["mode"] = "precise" if current == "creative" else "creative"
+    if current == "default":
+        GENERATION_CONFIG["mode"] = "precise"
+    elif current == "precise":
+        GENERATION_CONFIG["mode"] = "creative"
+    elif current == "creative":
+        GENERATION_CONFIG["mode"] = "default"
 
 
 

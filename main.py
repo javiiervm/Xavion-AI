@@ -3,11 +3,7 @@ from chatbot.config import (
     GENERATION_CONFIG,
     switch_generation_mode
 )
-from chatbot.logic import (
-    prepare_input,
-    generate_response,
-    SEP
-)
+from chatbot.logic import generate
 from chatbot.utils import (
     load_knowledge, 
     load_memory,
@@ -18,8 +14,6 @@ from chatbot.utils import (
     evaluate_math_expression,
     delete_stopwords
 )
-
-from chatbot.testLogic import generate
 
 import os
 import json
@@ -61,11 +55,11 @@ def start_chat(model, tokenizer, device, debug_mode):
                 print("Available commands:")
                 print(f"- {BOLD}'help'{RESET}: Show this command list")
                 print(f"- {BOLD}'mode'{RESET}: Show current generation mode")
-                print(f"- {BOLD}'mode:creative' / 'mode:precise'{RESET}: Set response style")
+                print(f"- {BOLD}'mode:default' / 'mode:creative' / 'mode:precise'{RESET}: Set response style")
                 print(f"- {BOLD}'switch'{RESET}: Toggle generation mode")
                 print(f"- {BOLD}'debug'{RESET}: Toggle debug mode")
                 print(f"- {BOLD}'reset'{RESET}: Start a new conversation")
-                print(f"- {BOLD}'exit'{RESET}: Close the chat")
+                print(f"- {BOLD}'exit'{RESET}: Close the chat\n")
             case "mode":
                 print(f"{BOLD}Current generation mode: {GREEN}{GENERATION_CONFIG['mode']}\n{RESET}")
             case "switch":
@@ -73,7 +67,7 @@ def start_chat(model, tokenizer, device, debug_mode):
                 print(f"{BOLD}🔁 Generation mode switched to: {GREEN}{GENERATION_CONFIG['mode']}\n{RESET}")
             case command if command.startswith("mode:"):
                 requested = command.split(":")[1]
-                if requested in ["creative", "precise"]:
+                if requested in ["default", "creative", "precise"]:
                     GENERATION_CONFIG["mode"] = requested
                     print(f"{BOLD}✅ Generation mode set to: {GREEN}{requested}\n{RESET}")
                 else:
@@ -171,7 +165,7 @@ def start_chat(model, tokenizer, device, debug_mode):
 
 
 if __name__ == "__main__":
-    print("Loading ProtoAI, please wait...", flush=True)
+    print("Loading Xavion, please wait...", flush=True)
     model, tokenizer, device = load_model_and_tokenizer(MODEL_PATH, DEVICE)
     debug_mode = False
     chat_finished = False
