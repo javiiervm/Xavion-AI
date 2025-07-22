@@ -117,9 +117,9 @@ In `config.py`, you can tweak generation parameters like:
 
 ## TODO / Future Improvements
 
-* [ ] Add more functionalities like math calculations or non-definition questions
+* [x] Add support for math operations
+* [ ] Add support for non-definition questions, greetings or other intentions
 * [ ] Fix issues with polysemia and conversation context
 * [ ] Add support for API-based knowledge retrieval (Wikipedia, Wolfram Alpha, etc.)
 * [ ] Export logs of conversations for analysis or training
 * [ ] Add a user interface for a more comfortable experience
-
