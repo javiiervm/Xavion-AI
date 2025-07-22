@@ -8,7 +8,7 @@ A local, knowledge-aware conversational AI chatbot powered by [Microsoft GODEL](
 
 ## 📌 Features
 
-* Based on Microsoft's `GODEL-v1_1-base-seq2seq` model (via Hugging Face)
+* Based on Microsoft's `GODEL-v1_1-large-seq2seq` model (via Hugging Face)
 * Works offline once the model is downloaded
 * Uses structured prompts with `instruction`, `fact`, and `conversation` blocks
 * Supports custom external knowledge from a JSON knowledge base
