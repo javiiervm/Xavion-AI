@@ -1,7 +1,11 @@
 <br />
 <div align="center">
   <h1 align="center">🤖 AI Chatbot with GODEL 🤖</h1>
+  <p style="text-align: center;">
+    Check out the releases page to find a stable version with as few bugs as possible.
+  </p>
 </div>
+<br /><br />
 
 A local, knowledge-aware conversational AI chatbot powered by [Microsoft GODEL](https://github.com/microsoft/GODEL). This chatbot runs entirely on your machine, supports structured prompts, and can reference custom knowledge stored in a local database.
 <br /><br />
