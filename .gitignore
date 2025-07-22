@@ -9,7 +9,7 @@ __pycache__/
 
 # Model Directories
 GODEL-v1_1-base-seq2seq/
-#GODEL-v1_1-large-seq2seq/
+GODEL-v1_1-large-seq2seq/
 
 # Data Directory
 data/
