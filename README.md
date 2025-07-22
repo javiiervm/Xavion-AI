@@ -6,20 +6,20 @@
 A local, knowledge-aware conversational AI chatbot powered by [Microsoft GODEL](https://github.com/microsoft/GODEL). This chatbot runs entirely on your machine, supports structured prompts, and can reference custom knowledge stored in a local database.
 <br /><br />
 
-## 📌 Features
+## Features
 
 * Based on Microsoft's `GODEL-v1_1-large-seq2seq` model (via Hugging Face)
 * Works offline once the model is downloaded
-* Uses structured prompts with `instruction`, `fact`, and `conversation` blocks
-* Supports custom external knowledge from a JSON knowledge base
+* Uses structured prompts with `instruction`, `knowledge`, and `conversation_history` blocks
+* Supports custom external knowledge and dynamic learning using a JSON knowledge base
 * Responds dynamically to the user and adapts based on detected context
 * Easily extendable with your own facts, logic, or integrations
 
-## 🛠️ Requirements
+## Requirements
 
-* Python 3.8+
-* Virtual environment (recommended)
-* Internet (only for initial model download)
+* Python 3.8+  *(Program has been tested with Python 3.13)*
+* Virtual Python environment to install packages (recommended, not mandatory)
+* Internet access (not mandatory when using the model offline)
 
 Install dependencies:
 
@@ -27,19 +27,22 @@ Install dependencies:
 pip install -r requirements.txt
 ```
 
-## 🧠 Project Structure
+## Project Structure
 
 ```
-chatbot-godel/
+root/
 ├── chatbot/
 │   ├── model.py             # Loads the GODEL model and tokenizer
 │   ├── logic.py             # Prompt formatting and response generation
-│   ├── knowledge_base.py    # Loads and searches knowledge facts
-│   ├── utils.py             # (Optional) Helpers like name/entity detection
+│   ├── config.py            # Presets to load configuration parameters
+│   ├── keywords.py          # Keyword lists to filter results
+│   └── utils.py             # Auxiliar functions
 ├── data/
-│   └── knowledge_base.json  # Custom knowledge database (editable)
+│   ├── knowledge.json       # Initial dictionary downloaded from the internet with createDic.py
+│   └── memory.json          # Custom dictionary where both user and AI can write new definitions
 ├── main.py                  # Main chat loop logic
-├── requirements.txt
+├── createDic.py             # Script to download a knowledge base (customizable) and convert it to JSON format
+├── requirements.txt         # Packages which you need to install to run the chatbot
 └── README.md
 ```
 
