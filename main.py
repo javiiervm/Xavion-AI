@@ -15,7 +15,8 @@ from chatbot.utils import (
     detect_intent,
     extract_teaching,
     extract_math_expression,
-    evaluate_math_expression
+    evaluate_math_expression,
+    delete_stopwords
 )
 
 from chatbot.testLogic import generate
@@ -87,7 +88,7 @@ def start_chat(model, tokenizer, device, debug_mode):
                 conversation_history.append(f"'{user_input}'")
 
                 # Detect user intent
-                intent = detect_intent(user_input)
+                intent = detect_intent(user_input, [])
                 if debug_mode:
                     print(f"{BOLD}🔎 Intent detected: {GREEN}{intent}{RESET}")
 
@@ -118,9 +119,14 @@ def start_chat(model, tokenizer, device, debug_mode):
                             print(f"{BOLD}🔎 Result: {GREEN}{result}{RESET}")
                         knowledge = f"The result of the expression '{expression}' is {result}."
                     else:
+                        intent = detect_intent(user_input, ["math"])
+                        instruction = 'Instruction: ' + instruction_map.get(intent, "given a dialog context, you need to response empathically.")
                         if debug_mode:
                             print(f"{BOLD}⚠️ No math expression detected in user input.{RESET}")
-                else:
+                            print(f"{BOLD}🔎 Intent detected: {GREEN}{intent}{RESET}")
+                            print(f"{BOLD}📝 New instruction: {GREEN}{instruction}{RESET}")
+                
+                if intent != "math":
                     # Search for knowledge
                     if keywords:
                         if debug_mode:
@@ -148,6 +154,7 @@ def start_chat(model, tokenizer, device, debug_mode):
                     # Add to memory new things learnt
                     term, definition = extract_teaching(user_input)
                     if term and definition:
+                        term = delete_stopwords(term)
                         USER_MEMORY[term] = {"knowledge": definition}
                         with open(MEMORY_PATH, "w", encoding="utf-8") as f:
                             json.dump(USER_MEMORY, f, ensure_ascii=False, indent=2)

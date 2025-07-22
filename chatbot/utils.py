@@ -52,7 +52,7 @@ def extract_keywords(text):
     keywords = [word for word in words if word not in STOPWORDS]
     return keywords if keywords else None
 
-def detect_intent(user_input):
+def detect_intent(user_input, restrictionList):
     """
     Detects the intent of the user's input.
 
@@ -64,19 +64,22 @@ def detect_intent(user_input):
     """
     text = user_input.lower().strip()
 
-    # Math operation requests
-    for pattern in MATH_PATTERNS:
-        if re.search(pattern, text):
-            return "math"
+    if "math" not in restrictionList:
+        # Math operation requests
+        for pattern in MATH_PATTERNS:
+            if re.search(pattern, text):
+                return "math"
 
-    # Definition requests
-    if any(keyword in text for keyword in DEFINITION_KEY_WORDS):
-        return "definition"
+    if "definition" not in restrictionList:
+        # Definition requests
+        if any(keyword in text for keyword in DEFINITION_KEY_WORDS):
+            return "definition"
 
-    # Teaching patterns - User is teaching the bot a new term
-    for pattern in TEACHING_PATTERNS:
-        if re.search(pattern, text):
-            return "teaching"
+    if "teaching" not in restrictionList:
+        # Teaching patterns - User is teaching the bot a new term
+        for pattern in TEACHING_PATTERNS:
+            if re.search(pattern, text):
+                return "teaching"
 
     # Default: conversation
     return "conversation"
@@ -110,17 +113,7 @@ def extract_teaching(user_input):
     
     return None, None
 
-def extract_math_expression(user_input, debug_mode):
-    """
-    Extracts a mathematical expression from the user's input.
-    
-    Args:
-        user_input (str): The raw user input.
-        debug_mode (bool): Print debug info if True.
-        
-    Returns:
-        str | None: The expression if found, else None.
-    """
+def extract_math_expression(user_input, debug_mode=False):
     cleaned_input = user_input.lower().strip()
 
     if debug_mode:
@@ -130,6 +123,13 @@ def extract_math_expression(user_input, debug_mode):
         match = re.search(pattern, cleaned_input)
         if match:
             expression = match.group(1).strip()
+
+            # Validación extra: debe contener al menos un dígito o función matemática
+            if not re.search(r"[\d\+\-\*\/\^]", expression) and not re.search(r"\b(sqrt|log|sin|cos|tan|pi|e)\b", expression):
+                if debug_mode:
+                    print(f"❌ False positive: '{expression}' is not a valid math expression.")
+                return None
+
             if debug_mode:
                 print(f"✅ Math expression detected: '{expression}'")
             return expression
@@ -159,3 +159,17 @@ def evaluate_math_expression(expression, debug_mode=False):
         if debug_mode:
             print(f"❌ Evaluation error: {e}")
         return "Sorry, I couldn't evaluate that expression."
+
+def delete_stopwords(text):
+    """
+    Removes common stopwords from a given text.
+    
+    Args:
+        text (str): The input text.
+        
+    Returns:
+        str: The text with stopwords removed.
+    """
+    words = text.split()
+    filtered_words = [word for word in words if word not in STOPWORDS]
+    return ' '.join(filtered_words)
