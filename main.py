@@ -40,7 +40,7 @@ def switch_debug_mode(current):
 
 def start_chat(model, tokenizer, device, debug_mode):
     os.system("clear")
-    print(f"{BOLD}🤖 Welcome to ProtoAI 🤖\n{RESET}Write 'help' for a list of commands, or 'exit' to finish.\n")
+    print(f"{BOLD}🤖 Welcome to Xavion AI 🤖\n{RESET}Write 'help' for a list of commands, or 'exit' to finish.\n")
 
     conversation_history = []
 
@@ -165,7 +165,7 @@ def start_chat(model, tokenizer, device, debug_mode):
 
 
 if __name__ == "__main__":
-    print("Loading Xavion, please wait...", flush=True)
+    print("Loading Xavion AI, please wait...", flush=True)
     model, tokenizer, device = load_model_and_tokenizer(MODEL_PATH, DEVICE)
     debug_mode = False
     chat_finished = False
