@@ -1,6 +1,6 @@
 <br />
 <div align="center">
-  <h1 align="center">🤖 AI Chatbot with GODEL 🤖</h1>
+  <h1 align="center">🤖 Xavion AI 🤖</h1>
   <p style="text-align: center;">
     Check out the releases page to find a stable version with as few bugs as possible.
   </p>
