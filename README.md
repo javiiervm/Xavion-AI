@@ -34,7 +34,7 @@ pip install -r requirements.txt
 ## Project Structure
 
 ```
-Python-AI-chatbot/
+Xavion-AI/
 ├── chatbot/
 │   ├── model.py             # Loads the GODEL model and tokenizer
 │   ├── logic.py             # Prompt formatting and response generation
@@ -55,7 +55,7 @@ Python-AI-chatbot/
 1. Clone the repo and set up your environment:
 
 ```bash
-git clone https://github.com/javiiervm/Python-AI-chatbot.git
+git clone https://github.com/javiiervm/Xavion-AI.git
 cd Python-AI-chatbot
 python -m venv chatbot-env
 source chatbot-env/bin/activate  # On Windows: chatbot-env\Scripts\activate
