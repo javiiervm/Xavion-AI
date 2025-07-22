@@ -1,3 +1,5 @@
+import math
+
 STOPWORDS = {
     # Artículos
     "a", "an", "the",
@@ -48,8 +50,29 @@ DEFINITION_KEY_WORDS = [
 ]
 
 TEACHING_PATTERNS = [
-        r"([\w\s]+) (?:is|means|is defined as|refers to) ([\w\s,\.]+)",  # X is/means Y
-        r"(?:the term|the word|the concept) ([\w\s]+) (?:means|is|refers to) ([\w\s,\.]+)",  # The term X means Y
-        r"([\w\s]+) (?:stands for|is understood as) ([\w\s,\.]+)",  # X stands for Y
-        r"(?:learn that|remember that|you should know that) ([\w\s]+) (?:is|means) ([\w\s,\.]+)"  # Learn that X is Y
-    ]
+    r"([\w\s]+) (?:is|means|is defined as|refers to) ([\w\s,\.]+)",  # X is/means Y
+    r"(?:the term|the word|the concept) ([\w\s]+) (?:means|is|refers to) ([\w\s,\.]+)",  # The term X means Y
+    r"([\w\s]+) (?:stands for|is understood as) ([\w\s,\.]+)",  # X stands for Y
+    r"(?:learn that|remember that|you should know that) ([\w\s]+) (?:is|means) ([\w\s,\.]+)"  # Learn that X is Y
+]
+
+MATH_PATTERNS = [
+    r"what\s+is\s+([a-z\d\s\+\-\*\/\(\)\^\%\.]+)(?:\?)?$",
+    r"calculate\s+([a-z\d\s\+\-\*\/\(\)\^\%\.]+)(?:\?)?$",
+    r"compute\s+([a-z\d\s\+\-\*\/\(\)\^\%\.]+)(?:\?)?$",
+    r"solve\s+([a-z\d\s\+\-\*\/\(\)\^\%\.]+)(?:\?)?$",
+    r"^([a-z\d\s\+\-\*\/\(\)\^\%\.]+)(?:\?)?$"
+]
+
+SAFE_MATH_FUNCS = {
+    "sqrt": math.sqrt,
+    "log": math.log,        # Natural log
+    "log10": math.log10,
+    "sin": math.sin,
+    "cos": math.cos,
+    "tan": math.tan,
+    "pi": math.pi,
+    "e": math.e,
+    "pow": pow,
+    "__builtins__": {}     # Seguridad: desactiva funciones peligrosas
+}

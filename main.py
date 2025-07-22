@@ -13,13 +13,16 @@ from chatbot.utils import (
     load_memory,
     extract_keywords,
     detect_intent,
-    extract_teaching
+    extract_teaching,
+    extract_math_expression,
+    evaluate_math_expression
 )
 
 from chatbot.testLogic import generate
 
 import os
 import json
+import math
 
 RESET = "\033[0m"
 BOLD = "\033[1m"
@@ -90,9 +93,10 @@ def start_chat(model, tokenizer, device, debug_mode):
 
                 # Build the instruction
                 instruction_map = {
-                    "definition": f"define the given term in a full sentence and provide examples if possible.",
-                    "teaching": f"thank the user for teaching the term.",
-                    "conversation": f"given a dialog context, you need to response empathically and ask questions to continue the conversation."
+                    "definition": "Define the term in a clear sentence with a short example if possible.",
+                    "teaching": "Thank the user for the new information and ask something related.",
+                    "math": "Answer the math question telling the result of the expression. Avoid repeating the question.",
+                    "conversation": "Reply naturally and keep the conversation going with a follow-up question."
                 }
                 instruction = 'Instruction: ' + instruction_map.get(intent, "given a dialog context, you need to response empathically.")
                 if debug_mode:
@@ -104,25 +108,38 @@ def start_chat(model, tokenizer, device, debug_mode):
                 # Extract keywords from user input
                 keywords = extract_keywords(user_input)
                 
-                # Search for knowledge
-                if keywords:
+                if intent == "math":
+                    expression = extract_math_expression(user_input, debug_mode)
                     if debug_mode:
-                        print(f"{BOLD}🔎 Keywords detected: {GREEN}{keywords}{RESET}")
-                    for keyword in keywords:
-                        if keyword in KNOWLEDGE_DB:
-                            if debug_mode:
-                                print(f"🔎 Keyword '{keyword}': {KNOWLEDGE_DB[keyword]["knowledge"]}.{RESET}")
-                            knowledge += KNOWLEDGE_DB[keyword]["knowledge"] + "\n"
-                        elif keyword in USER_MEMORY:
-                            if debug_mode:
-                                print(f"🔎 Keyword '{keyword}': {USER_MEMORY[keyword]["knowledge"]}.{RESET}")
-                            knowledge += USER_MEMORY[keyword]["knowledge"] + "\n"
-                        else:
-                            if debug_mode:
-                                print(f"{BOLD}⚠️ Keyword '{keyword}' not found in knowledge base.{RESET}")
+                        print(f"{BOLD}🔎 Expression detected: {GREEN}{expression}{RESET}")
+                    if expression:
+                        result = evaluate_math_expression(expression, debug_mode)
+                        if debug_mode:
+                            print(f"{BOLD}🔎 Result: {GREEN}{result}{RESET}")
+                        knowledge = f"The result of the expression '{expression}' is {result}."
+                    else:
+                        if debug_mode:
+                            print(f"{BOLD}⚠️ No math expression detected in user input.{RESET}")
                 else:
-                    if debug_mode:
-                        print(f"{BOLD}⚠️ No keywords detected in user input.{RESET}")
+                    # Search for knowledge
+                    if keywords:
+                        if debug_mode:
+                            print(f"{BOLD}🔎 Keywords detected: {GREEN}{keywords}{RESET}")
+                        for keyword in keywords:
+                            if keyword in KNOWLEDGE_DB:
+                                if debug_mode:
+                                    print(f"🔎 Keyword '{keyword}': {KNOWLEDGE_DB[keyword]["knowledge"]}.{RESET}")
+                                knowledge += KNOWLEDGE_DB[keyword]["knowledge"] + "\n"
+                            elif keyword in USER_MEMORY:
+                                if debug_mode:
+                                    print(f"🔎 Keyword '{keyword}': {USER_MEMORY[keyword]["knowledge"]}.{RESET}")
+                                knowledge += USER_MEMORY[keyword]["knowledge"] + "\n"
+                            else:
+                                if debug_mode:
+                                    print(f"{BOLD}⚠️ Keyword '{keyword}' not found in knowledge base.{RESET}")
+                    else:
+                        if debug_mode:
+                            print(f"{BOLD}⚠️ No keywords detected in user input.{RESET}")
 
                 if debug_mode:
                     print(f"{BOLD}📝 Generating response...{RESET}")
@@ -144,41 +161,6 @@ def start_chat(model, tokenizer, device, debug_mode):
 
                 # Print response
                 print(f"\n{BOLD}🤖 {response}{RESET}\n")
-
-                """
-                # Add user input to conversation history
-                conversation_history.append(f"User: {user_input}")
-                recent_conversation = f" {SEP} ".join(conversation_history[-6:])
-                
-                # Detect user intention
-                intent = None   # Call the detecting function
-                if debug_mode:
-                    print(f"{BOLD}🔎 Intent detected: {GREEN}{intent}{RESET}")
-
-                # Instruction built
-                instruction_map = {
-                    "definition": f"Define the given term in a full sentence.",
-                    "conversation": f"Continue the conversation or ask a question according to what the user said."
-                }
-                instruction = instruction_map.get(intent, "Respond to the user with a coherent, relevant, and original message to keep the conversation going.")
-
-                # Search for knowledge
-                knowledge = ""
-                
-                # Build prompt for GODEL
-                input_text = prepare_input(instruction, knowledge, recent_conversation)
-                if debug_mode:
-                    print(f"{BOLD}📝 Instruction: {GREEN}{instruction}{RESET}")
-
-                # Generate a response
-                response = generate_response(model, tokenizer, input_text, device=device)
-
-                # Update convsersation history
-                conversation_history.append(f"Bot: {response}")
-
-                # Print response
-                print(f"\n{BOLD}🤖 {response}{RESET}\n")
-                """
 
 
 if __name__ == "__main__":

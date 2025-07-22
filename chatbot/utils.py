@@ -1,12 +1,15 @@
 from chatbot.keywords import (
     STOPWORDS, 
     DEFINITION_KEY_WORDS,
-    TEACHING_PATTERNS
+    TEACHING_PATTERNS,
+    MATH_PATTERNS,
+    SAFE_MATH_FUNCS
 )
 
 import re
 import json
 import os
+import math
 
 def load_knowledge(knowledge_path):
     with open(knowledge_path, "r", encoding="utf-8") as f:
@@ -61,6 +64,11 @@ def detect_intent(user_input):
     """
     text = user_input.lower().strip()
 
+    # Math operation requests
+    for pattern in MATH_PATTERNS:
+        if re.search(pattern, text):
+            return "math"
+
     # Definition requests
     if any(keyword in text for keyword in DEFINITION_KEY_WORDS):
         return "definition"
@@ -101,3 +109,53 @@ def extract_teaching(user_input):
             return term, definition
     
     return None, None
+
+def extract_math_expression(user_input, debug_mode):
+    """
+    Extracts a mathematical expression from the user's input.
+    
+    Args:
+        user_input (str): The raw user input.
+        debug_mode (bool): Print debug info if True.
+        
+    Returns:
+        str | None: The expression if found, else None.
+    """
+    cleaned_input = user_input.lower().strip()
+
+    if debug_mode:
+        print(f"🔎 Scanning for math expression in: '{cleaned_input}'")
+
+    for pattern in MATH_PATTERNS:
+        match = re.search(pattern, cleaned_input)
+        if match:
+            expression = match.group(1).strip()
+            if debug_mode:
+                print(f"✅ Math expression detected: '{expression}'")
+            return expression
+
+    if debug_mode:
+        print("❌ No math expression detected.")
+    return None
+
+def evaluate_math_expression(expression, debug_mode=False):
+    """
+    Safely evaluates a mathematical expression using a restricted environment.
+    
+    Args:
+        expression (str): A valid math expression (e.g. "2 + 2").
+        debug_mode (bool): Show debug messages if True.
+        
+    Returns:
+        float | str: The result or an error message.
+    """
+    try:
+        cleaned_expr = expression.replace("^", "**")
+        result = eval(cleaned_expr, SAFE_MATH_FUNCS)
+        if debug_mode:
+            print(f"✅ Evaluated result: {result}")
+        return result
+    except Exception as e:
+        if debug_mode:
+            print(f"❌ Evaluation error: {e}")
+        return "Sorry, I couldn't evaluate that expression."
