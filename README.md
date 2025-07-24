@@ -44,8 +44,9 @@ Xavion-AI/
 ├── data/
 │   ├── knowledge.json       # Initial dictionary downloaded from the internet with createDic.py
 │   └── memory.json          # Custom dictionary where both user and AI can write new definitions
+├── auxiliar/
+│   └── test_model_load.py   # Script to test the loading of the model and tokenizer.
 ├── main.py                  # Main chat loop logic
-├── createDic.py             # Script to download a knowledge base (customizable) and convert it to JSON format
 ├── requirements.txt         # Packages which you need to install to run the chatbot
 └── README.md
 ```
@@ -110,7 +111,36 @@ You can expand this file with your own knowledge entries or give definitions to 
 ## Model Configuration
 
 In `config.py`, you can tweak generation parameters like:
-...
+
+* **mode**: Controls the generation behavior. Available options are:
+
+  * `"default"`: Balanced for general-purpose generation.
+  * `"creative"`: Generates more imaginative and open-ended responses.
+  * `"precise"`: Produces focused and accurate outputs, ideal for factual or structured tasks.
+
+### Default Mode Settings (`mode = "default"`):
+
+* `max_length = 128`: Maximum number of tokens in the output.
+* `min_length = 8`: Minimum number of tokens in the output.
+* `top_p = 0.9`: Uses nucleus sampling to consider the smallest possible set of tokens with cumulative probability ≥ `top_p`.
+* `do_sample = True`: Enables sampling for more diverse results.
+
+### Creative Mode Settings (`mode = "creative"`):
+
+* `temperature = 0.7`: Controls randomness in generation. Higher values make output more random.
+* `top_p = 0.9`: As in default mode, enables nucleus sampling.
+* `top_k = 50`: Limits sampling to the top 50 most likely tokens.
+* `max_length = 512`: Allows for longer output.
+* `do_sample = True`: Sampling is enabled for creative variety.
+
+### Precise Mode Settings (`mode = "precise"`):
+
+* `do_sample = False`: Disables sampling to favor deterministic results.
+* `num_beams = 3`: Beam search with 3 beams to explore multiple paths.
+* `early_stopping = True`: Stops generation when the best output is found early.
+* `max_length = 512`: Supports longer and more complete answers.
+
+You can switch modes or fine-tune individual parameters to fit your use case. This modular design allows for easy experimentation with different generation styles.
 
 ## 📚 Resources Used
 
@@ -121,9 +151,10 @@ In `config.py`, you can tweak generation parameters like:
 
 ## TODO / Future Improvements
 
-* [x] Add support for math operations
-* [ ] Add support for non-definition questions, greetings or other intentions
+* [x] Add support for math operations, greetings, and thanks
+* [ ] Add support for non-definition questions or other intentions
 * [ ] Fix issues with polysemia and conversation context
 * [ ] Add support for API-based knowledge retrieval (Wikipedia, Wolfram Alpha, etc.)
 * [ ] Export logs of conversations for analysis or training
 * [ ] Add a user interface for a more comfortable experience
+* [ ] Other
