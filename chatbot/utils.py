@@ -3,7 +3,9 @@ from chatbot.keywords import (
     DEFINITION_KEY_WORDS,
     TEACHING_PATTERNS,
     MATH_PATTERNS,
-    SAFE_MATH_FUNCS
+    SAFE_MATH_FUNCS,
+    GREETING_KEYWORDS,
+    THANKS_KEYWORDS
 )
 
 import re
@@ -80,6 +82,14 @@ def detect_intent(user_input, restrictionList):
         for pattern in TEACHING_PATTERNS:
             if re.search(pattern, text):
                 return "teaching"
+
+    if "greeting" not in restrictionList:
+        if any(greet in text for greet in GREETING_KEYWORDS):
+            return "greeting"
+
+    if "thanks" not in restrictionList:
+        if any(thank in text for thank in THANKS_KEYWORDS):
+            return "thanks"
 
     # Default: conversation
     return "conversation"

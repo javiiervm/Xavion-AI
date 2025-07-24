@@ -79,7 +79,7 @@ def start_chat(model, tokenizer, device, debug_mode):
                 return False
             case _:
                 # Update conversation history
-                conversation_history.append(f"'{user_input}'")
+                conversation_history.append(f"User said '{user_input}'")
 
                 # Detect user intent
                 intent = detect_intent(user_input, [])
@@ -88,12 +88,21 @@ def start_chat(model, tokenizer, device, debug_mode):
 
                 # Build the instruction
                 instruction_map = {
-                    "definition": "Define the term in a clear sentence with a short example if possible.",
-                    "teaching": "Thank the user for the new information and ask something related.",
-                    "math": "Answer the math question telling the result of the expression. Avoid repeating the question.",
-                    "conversation": "Reply naturally and keep the conversation going with a follow-up question."
+                    "definition": "Define the term clearly in one sentence, optionally with a short example.",
+                    "teaching": "Thank the user for teaching something new and ask a related question.",
+                    "math": "Answer the math question with the correct result. Avoid repeating the question.",
+                    "greeting": "Say hello to the user or the mentioned person in a natural and warm way. Do not explain what greetings are. Always add a friendly follow-up question.",
+                    "thanks": "Acknowledge the user's gratitude naturally. Do not explain what gratitude is. Offer help if needed.",
+                    "conversation": "Reply naturally and continue the topic. Always end with a question."
                 }
-                instruction = 'Instruction: ' + instruction_map.get(intent, "given a dialog context, you need to response empathically.")
+                
+                if intent == "greeting":
+                    if "to " in user_input.lower() or "a " in user_input.lower():
+                        instruction = "Say hello to the person the user mentioned. Use their name if possible. Do not define what greetings are."
+                    else:
+                        instruction = instruction_map["greeting"]
+
+                instruction = 'Instruction: ' + instruction_map.get(intent, "reply naturally and continue the topic, always end with a question.")
                 if debug_mode:
                     print(f"{BOLD}📝 Instruction: {GREEN}{instruction}{RESET}")
 
@@ -120,7 +129,7 @@ def start_chat(model, tokenizer, device, debug_mode):
                             print(f"{BOLD}🔎 Intent detected: {GREEN}{intent}{RESET}")
                             print(f"{BOLD}📝 New instruction: {GREEN}{instruction}{RESET}")
                 
-                if intent != "math":
+                if intent != "math" and intent != "greeting" and intent != "thanks":
                     # Search for knowledge
                     if keywords:
                         if debug_mode:
@@ -158,7 +167,7 @@ def start_chat(model, tokenizer, device, debug_mode):
                 response = generate(instruction, knowledge, conversation_history, model, tokenizer)
 
                 # Update conversation history
-                conversation_history.append(f"'{response}'")
+                conversation_history.append(f"Bot answered '{response}'")
 
                 # Print response
                 print(f"\n{BOLD}🤖 {response}{RESET}\n")

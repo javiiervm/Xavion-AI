@@ -76,3 +76,7 @@ SAFE_MATH_FUNCS = {
     "pow": pow,
     "__builtins__": {}     # Seguridad: desactiva funciones peligrosas
 }
+
+GREETING_KEYWORDS = ["hello", "hi", "hey", "hola", "saludos", "good morning", "good afternoon", "good evening"]
+
+THANKS_KEYWORDS = ["thank you", "thanks", "gracias", "much appreciated", "cheers"]
