@@ -57,7 +57,7 @@ Xavion-AI/
 
 ```bash
 git clone https://github.com/javiiervm/Xavion-AI.git
-cd Python-AI-chatbot
+cd Xavion-AI
 python -m venv chatbot-env
 source chatbot-env/bin/activate  # On Windows: chatbot-env\Scripts\activate
 ```
