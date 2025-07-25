@@ -8,12 +8,15 @@ from chatbot.utils import (
     load_knowledge, 
     load_memory,
     extract_keywords,
-    detect_intent,
     extract_teaching,
     extract_math_expression,
     evaluate_math_expression,
     delete_stopwords
 )
+from chatbot.keywords import (
+    INSTRUCTION_MAP
+)
+import chatbot.Modules.Command as cmnd
 
 import os
 import json
@@ -35,8 +38,43 @@ KNOWLEDGE_PATH = "data/knowledge.json"
 KNOWLEDGE_DB = load_knowledge(KNOWLEDGE_PATH)
 USER_MEMORY = load_memory(MEMORY_PATH)
 
+USER_COMMANDS = ["exit", "help", "mode", "switch", "mode:default", "mode:creative", "mode:precise", "debug", "reset"]
+
 def switch_debug_mode(current):
     return not current
+
+def analyze_input(user_input, debug_mode):
+    match user_input.lower():
+        case "exit":
+            print(f"\n{BOLD}🤖 Goodbye!{RESET}\n")
+            return True, debug_mode
+        case "help":
+            print("Available commands:")
+            print(f"- {BOLD}'help'{RESET}: Show this command list")
+            print(f"- {BOLD}'mode'{RESET}: Show current generation mode")
+            print(f"- {BOLD}'mode:default' / 'mode:creative' / 'mode:precise'{RESET}: Set response style")
+            print(f"- {BOLD}'switch'{RESET}: Toggle generation mode")
+            print(f"- {BOLD}'debug'{RESET}: Toggle debug mode")
+            print(f"- {BOLD}'reset'{RESET}: Start a new conversation")
+            print(f"- {BOLD}'exit'{RESET}: Close the chat\n")
+        case "mode":
+            print(f"{BOLD}Current generation mode: {GREEN}{GENERATION_CONFIG['mode']}\n{RESET}")
+        case "switch":
+            switch_generation_mode()
+            print(f"{BOLD}🔁 Generation mode switched to: {GREEN}{GENERATION_CONFIG['mode']}\n{RESET}")
+        case command if command.startswith("mode:"):
+            requested = command.split(":")[1]
+            if requested in ["default", "creative", "precise"]:
+                GENERATION_CONFIG["mode"] = requested
+                print(f"{BOLD}✅ Generation mode set to: {GREEN}{requested}\n{RESET}")
+            else:
+                print(f"{BOLD}⚠️ Invalid mode. Use 'creative' or 'precise'.\n{RESET}")
+        case "debug":
+            debug_mode = switch_debug_mode(debug_mode)
+            print(f"{BOLD}🔁 Debug mode switched to: {GREEN}{'Enabled' if debug_mode else 'Disabled'}\n{RESET}")
+        case "reset":
+            return False, debug_mode
+    return None, debug_mode
 
 def start_chat(model, tokenizer, device, debug_mode):
     os.system("clear")
@@ -46,131 +84,36 @@ def start_chat(model, tokenizer, device, debug_mode):
 
     while True:
         user_input = input(">> ").strip()
+        
+        if user_input.lower() in USER_COMMANDS:
+            user_command, debug_mode = analyze_input(user_input, debug_mode)
+            if user_command is not None:
+                return user_command
+        
+        else:
+            # Update conversation history
+            conversation_history.append(f"User said '{user_input}'")
 
-        match user_input.lower():
-            case "exit":
-                print(f"\n{BOLD}🤖 Goodbye!{RESET}\n")
-                return True
-            case "help":
-                print("Available commands:")
-                print(f"- {BOLD}'help'{RESET}: Show this command list")
-                print(f"- {BOLD}'mode'{RESET}: Show current generation mode")
-                print(f"- {BOLD}'mode:default' / 'mode:creative' / 'mode:precise'{RESET}: Set response style")
-                print(f"- {BOLD}'switch'{RESET}: Toggle generation mode")
-                print(f"- {BOLD}'debug'{RESET}: Toggle debug mode")
-                print(f"- {BOLD}'reset'{RESET}: Start a new conversation")
-                print(f"- {BOLD}'exit'{RESET}: Close the chat\n")
-            case "mode":
-                print(f"{BOLD}Current generation mode: {GREEN}{GENERATION_CONFIG['mode']}\n{RESET}")
-            case "switch":
-                switch_generation_mode()
-                print(f"{BOLD}🔁 Generation mode switched to: {GREEN}{GENERATION_CONFIG['mode']}\n{RESET}")
-            case command if command.startswith("mode:"):
-                requested = command.split(":")[1]
-                if requested in ["default", "creative", "precise"]:
-                    GENERATION_CONFIG["mode"] = requested
-                    print(f"{BOLD}✅ Generation mode set to: {GREEN}{requested}\n{RESET}")
-                else:
-                    print(f"{BOLD}⚠️ Invalid mode. Use 'creative' or 'precise'.\n{RESET}")
-            case "debug":
-                debug_mode = switch_debug_mode(debug_mode)
-                print(f"{BOLD}🔁 Debug mode switched to: {GREEN}{'Enabled' if debug_mode else 'Disabled'}\n{RESET}")
-            case "reset":
-                return False
-            case _:
-                # Update conversation history
-                conversation_history.append(f"User said '{user_input}'")
+            # Create a new command
+            current_command = cmnd.Command()
 
-                # Detect user intent
-                intent = detect_intent(user_input, [])
-                if debug_mode:
-                    print(f"{BOLD}🔎 Intent detected: {GREEN}{intent}{RESET}")
+            # Build the proper command from user input
+            current_command.build_chatbot_command(user_input, KNOWLEDGE_DB, USER_MEMORY, MEMORY_PATH, debug_mode)
 
-                # Build the instruction
-                instruction_map = {
-                    "definition": "Define the term clearly in one sentence, optionally with a short example.",
-                    "teaching": "Thank the user for teaching something new and ask a related question.",
-                    "math": "Answer the math question with the correct result. Avoid repeating the question.",
-                    "greeting": "Say hello to the user or the mentioned person in a natural and warm way. Do not explain what greetings are. Always add a friendly follow-up question.",
-                    "thanks": "Acknowledge the user's gratitude naturally. Do not explain what gratitude is. Offer help if needed.",
-                    "conversation": "Reply naturally and continue the topic. Always end with a question."
-                }
-                
-                if intent == "greeting":
-                    if "to " in user_input.lower() or "a " in user_input.lower():
-                        instruction = "Say hello to the person the user mentioned. Use their name if possible. Do not define what greetings are."
-                    else:
-                        instruction = instruction_map["greeting"]
+            if debug_mode:
+                print(f"{BOLD}📝 Generating response...{RESET}")            
 
-                instruction = 'Instruction: ' + instruction_map.get(intent, "reply naturally and continue the topic, always end with a question.")
-                if debug_mode:
-                    print(f"{BOLD}📝 Instruction: {GREEN}{instruction}{RESET}")
+            # Get only the most recent conversation entries
+            recent_history = conversation_history[-6:] if len(conversation_history) > 6 else conversation_history
 
-                # Leave the knowldge empty
-                knowledge = ''
+            # Generate a response
+            response = generate(current_command.get_instruction(), current_command.get_knowledge(), recent_history, model, tokenizer)
 
-                # Extract keywords from user input
-                keywords = extract_keywords(user_input)
-                
-                if intent == "math":
-                    expression = extract_math_expression(user_input, debug_mode)
-                    if debug_mode:
-                        print(f"{BOLD}🔎 Expression detected: {GREEN}{expression}{RESET}")
-                    if expression:
-                        result = evaluate_math_expression(expression, debug_mode)
-                        if debug_mode:
-                            print(f"{BOLD}🔎 Result: {GREEN}{result}{RESET}")
-                        knowledge = f"The result of the expression '{expression}' is {result}."
-                    else:
-                        intent = detect_intent(user_input, ["math"])
-                        instruction = 'Instruction: ' + instruction_map.get(intent, "given a dialog context, you need to response empathically.")
-                        if debug_mode:
-                            print(f"{BOLD}⚠️ No math expression detected in user input.{RESET}")
-                            print(f"{BOLD}🔎 Intent detected: {GREEN}{intent}{RESET}")
-                            print(f"{BOLD}📝 New instruction: {GREEN}{instruction}{RESET}")
-                
-                if intent != "math" and intent != "greeting" and intent != "thanks":
-                    # Search for knowledge
-                    if keywords:
-                        if debug_mode:
-                            print(f"{BOLD}🔎 Keywords detected: {GREEN}{keywords}{RESET}")
-                        for keyword in keywords:
-                            if keyword in KNOWLEDGE_DB:
-                                if debug_mode:
-                                    print(f"🔎 Keyword '{keyword}': {KNOWLEDGE_DB[keyword]["knowledge"]}.{RESET}")
-                                knowledge += KNOWLEDGE_DB[keyword]["knowledge"] + "\n"
-                            elif keyword in USER_MEMORY:
-                                if debug_mode:
-                                    print(f"🔎 Keyword '{keyword}': {USER_MEMORY[keyword]["knowledge"]}.{RESET}")
-                                knowledge += USER_MEMORY[keyword]["knowledge"] + "\n"
-                            else:
-                                if debug_mode:
-                                    print(f"{BOLD}⚠️ Keyword '{keyword}' not found in knowledge base.{RESET}")
-                    else:
-                        if debug_mode:
-                            print(f"{BOLD}⚠️ No keywords detected in user input.{RESET}")
+            # Update conversation history
+            conversation_history.append(f"Bot answered '{response}'")
 
-                if debug_mode:
-                    print(f"{BOLD}📝 Generating response...{RESET}")
-
-                if intent == "teaching":
-                    # Add to memory new things learnt
-                    term, definition = extract_teaching(user_input)
-                    if term and definition:
-                        term = delete_stopwords(term)
-                        USER_MEMORY[term] = {"knowledge": definition}
-                        with open(MEMORY_PATH, "w", encoding="utf-8") as f:
-                            json.dump(USER_MEMORY, f, ensure_ascii=False, indent=2)
-                        print(f"\n{BOLD}✅ New knowledge added to memory: {GREEN}{term}{RESET}")
-
-                # Generate a response
-                response = generate(instruction, knowledge, conversation_history, model, tokenizer)
-
-                # Update conversation history
-                conversation_history.append(f"Bot answered '{response}'")
-
-                # Print response
-                print(f"\n{BOLD}🤖 {response}{RESET}\n")
+            # Print response
+            print(f"\n{BOLD}🤖 {response}{RESET}\n")
 
 
 if __name__ == "__main__":

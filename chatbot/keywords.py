@@ -1,5 +1,14 @@
 import math
 
+INSTRUCTION_MAP = {
+    "definition": "Define the term clearly in one sentence, optionally with a short example.",
+    "teaching": "Thank the user for teaching something new and ask a related question.",
+    "math": "Answer the math question with the correct result. Avoid repeating the question.",
+    "greeting": "Say hello to the user or the mentioned person in a natural and warm way. Do not explain what greetings are. Always add a friendly follow-up question.",
+    "thanks": "Acknowledge the user's gratitude naturally. Do not explain what gratitude is. Offer help if needed.",
+    "conversation": "Reply naturally and continue the topic. Always end with a question."
+}
+
 STOPWORDS = {
     # Artículos
     "a", "an", "the",

@@ -54,45 +54,39 @@ def extract_keywords(text):
     keywords = [word for word in words if word not in STOPWORDS]
     return keywords if keywords else None
 
-def detect_intent(user_input, restrictionList):
+def double_check_intent(user_input, intent, debug_mode=False):
     """
-    Detects the intent of the user's input.
+    Double-checks the intent detected by the AI.
 
     Args:
         user_input (str): The user's input.
+        intent (str): The intent detected by the AI.
+        debug_mode (bool): Show debug messages if True.
 
     Returns:
-        str: The detected intent
+        str: The double-checked intent.
     """
-    text = user_input.lower().strip()
+    if debug_mode:
+        print(f"🔎 Double-checking intent: {intent}")
 
-    if "math" not in restrictionList:
-        # Math operation requests
-        for pattern in MATH_PATTERNS:
-            if re.search(pattern, text):
-                return "math"
+    if intent == "math":
+        expression = extract_math_expression(user_input, debug_mode)
+        if debug_mode:
+            print(f"{BOLD}🔎 Expression detected: {GREEN}{expression}{RESET}")
+        if expression:
+            result = evaluate_math_expression(expression, debug_mode)
+            if debug_mode:
+                print(f"{BOLD}🔎 Result: {GREEN}{result}{RESET}")
+            knowledge = f"The result of the expression '{expression}' is {result}."
+        else:
+            intent = detect_intent(user_input, ["math"])
+            instruction = 'Instruction: ' + instruction_map.get(intent, "given a dialog context, you need to response empathically.")
+            if debug_mode:
+                print(f"{BOLD}⚠️ No math expression detected in user input.{RESET}")
+                print(f"{BOLD}🔎 Intent detected: {GREEN}{intent}{RESET}")
+                print(f"{BOLD}📝 New instruction: {GREEN}{instruction}{RESET}")
 
-    if "definition" not in restrictionList:
-        # Definition requests
-        if any(keyword in text for keyword in DEFINITION_KEY_WORDS):
-            return "definition"
-
-    if "teaching" not in restrictionList:
-        # Teaching patterns - User is teaching the bot a new term
-        for pattern in TEACHING_PATTERNS:
-            if re.search(pattern, text):
-                return "teaching"
-
-    if "greeting" not in restrictionList:
-        if any(greet in text for greet in GREETING_KEYWORDS):
-            return "greeting"
-
-    if "thanks" not in restrictionList:
-        if any(thank in text for thank in THANKS_KEYWORDS):
-            return "thanks"
-
-    # Default: conversation
-    return "conversation"
+    return intent
 
 def extract_teaching(user_input):
     """
@@ -106,15 +100,7 @@ def extract_teaching(user_input):
     """
     text = user_input.lower().strip()
     
-    # Teaching patterns with capture groups
-    teaching_patterns = [
-        r"([\w\s]+) (?:is|means|is defined as|refers to) ([\w\s,\.]+)",  # X is/means Y
-        r"(?:the term|the word|the concept) ([\w\s]+) (?:means|is|refers to) ([\w\s,\.]+)",  # The term X means Y
-        r"([\w\s]+) (?:stands for|is understood as) ([\w\s,\.]+)",  # X stands for Y
-        r"(?:learn that|remember that|you should know that) ([\w\s]+) (?:is|means) ([\w\s,\.]+)"  # Learn that X is Y
-    ]
-    
-    for pattern in teaching_patterns:
+    for pattern in TEACHING_PATTERNS:
         match = re.search(pattern, text)
         if match:
             term = match.group(1).strip()
