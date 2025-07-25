@@ -36,6 +36,8 @@ pip install -r requirements.txt
 ```
 Xavion-AI/
 ├── chatbot/
+│   │   └── Modules/         # Folder for class declarations
+│   │       └── Command.py   # Class with the necessary methods to create a proper prompt before generating a response
 │   ├── model.py             # Loads the GODEL model and tokenizer
 │   ├── logic.py             # Prompt formatting and response generation
 │   ├── config.py            # Presets to load configuration parameters
@@ -45,7 +47,7 @@ Xavion-AI/
 │   ├── knowledge.json       # Initial dictionary downloaded from the internet with createDic.py
 │   └── memory.json          # Custom dictionary where both user and AI can write new definitions
 ├── auxiliar/
-│   └── test_model_load.py   # Script to test the loading of the model and tokenizer.
+│   └── test_model_load.py   # Script to test the loading of the model and tokenizer
 ├── main.py                  # Main chat loop logic
 ├── requirements.txt         # Packages which you need to install to run the chatbot
 └── README.md
