@@ -1,6 +1,7 @@
 <br />
 <div align="center">
-  <img width="100" height="100" alt="Xavion AI logo" src="https://github.com/user-attachments/assets/f0cef913-bdf1-4b2f-a0b0-26b2bc2275b7" />
+  <img width="120" height="120" alt="Xavion AI logo" src="assets/logo.png" />
+
   <h1 align="center">Xavion AI</h1>
   <img src="https://img.shields.io/github/last-commit/javiiervm/Xavion-AI" />
   <img src="https://img.shields.io/badge/python-3.10%2B-yellow" />
