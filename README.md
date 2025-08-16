@@ -7,8 +7,6 @@
   <img src="https://img.shields.io/badge/platform-linux%20%7C%20windows%20%7C%20macos-lightgrey" />
   <img src="https://img.shields.io/github/issues/javiiervm/Xavion-AI" />
   <img src="https://img.shields.io/github/stars/javiiervm/Xavion-AI" />
-  <br />
-  <img src="https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white" />
 </div>
 <br /><br />
 
