@@ -1,9 +1,14 @@
 <br />
 <div align="center">
-  <h1 align="center">🤖 Xavion AI 🤖</h1>
-  <p style="text-align: center;">
-    Check out the releases page to find a stable version with as few bugs as possible.
-  </p>
+  <img width="100" height="100" alt="Xavion AI logo" src="https://github.com/user-attachments/assets/f0cef913-bdf1-4b2f-a0b0-26b2bc2275b7" />
+  <h1 align="center">Xavion AI</h1>
+  <img src="https://img.shields.io/github/last-commit/javiiervm/Xavion-AI" />
+  <img src="https://img.shields.io/badge/python-3.10%2B-yellow" />
+  <img src="https://img.shields.io/badge/platform-linux%20%7C%20windows%20%7C%20macos-lightgrey" />
+  <img src="https://img.shields.io/github/issues/javiiervm/Xavion-AI" />
+  <img src="https://img.shields.io/github/stars/javiiervm/Xavion-AI" />
+  <br />
+  <img src="https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white" />
 </div>
 <br /><br />
 
