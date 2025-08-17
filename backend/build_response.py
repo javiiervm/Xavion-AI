@@ -2,6 +2,8 @@ from langchain_ollama import OllamaLLM
 from langchain_core.prompts import ChatPromptTemplate
 from langchain.callbacks.base import BaseCallbackHandler
 
+from backend.key_variables import TEMPLATES
+
 class CustomStreamingHandler(BaseCallbackHandler):
     def __init__(self):
         self.first_token = True
@@ -24,26 +26,19 @@ model = OllamaLLM(
 )
 
 def generate_response(instruction, intent, conversation_history, user_input):
-    template = """
-{instruction}
-
-This is some information about you: {ai_info}
-
-Here are some concepts you should know: {knowledge}
-
-Here is the conversation history: {conversation_history}
-
-Question: {question}
-
-Answer:
-"""
-    prompt = ChatPromptTemplate.from_template(template)
-    chain = prompt | model
-    response = chain.invoke({
+    template = TEMPLATES[intent]
+    params = {
         "instruction": instruction,
-        "ai_info": "Your name is Xavion AI, you are an AI assistant that answers questions, helps with tasks or just have a conversation with users.",
-        "knowledge": "",
         "conversation_history": conversation_history,
         "question": user_input
-    })
+    }
+
+    if intent == "conversation":
+        params["knowledge"] = "Your name is Xavion AI, you are an AI assistant that answers questions, helps with tasks or just have a conversation with users."
+    else:
+        params["knowledge"] = ""
+    
+    prompt = ChatPromptTemplate.from_template(template)
+    chain = prompt | model
+    response = chain.invoke(params)
     return response

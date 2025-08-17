@@ -7,3 +7,17 @@ COLORS = {
 }
 
 USER_COMMANDS = ["debug", "exit", "help", "reset"]
+
+TEMPLATES = {
+    "conversation": """
+{instruction}
+
+This is some information you should know: {knowledge}
+
+Here is the conversation history: {conversation_history}
+
+Question: {question}
+
+Answer:
+"""
+}
