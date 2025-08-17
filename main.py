@@ -2,8 +2,8 @@ from langchain_ollama import OllamaLLM
 from langchain_core.prompts import ChatPromptTemplate
 from langchain.callbacks.base import BaseCallbackHandler
 
-from aux_funcs.build_prompt import build_prompt, detect_intent
-from config.colors import RESET, BOLD, GREEN, RED, YELLOW
+from backend.build_prompt import build_prompt, detect_intent
+from backend.colors import RESET, BOLD, GREEN, RED, YELLOW
 
 import os
 

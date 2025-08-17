@@ -1,9 +1,9 @@
-from aux_funcs.keywords import (
+from backend.keywords import (
     GREETING_KEYWORDS,
     DEFINITION_KEY_WORDS,
     THANKS_KEYWORDS
 )
-from config.colors import RESET, BOLD, GREEN
+from backend.colors import RESET, BOLD, GREEN
 
 INSTRUCTION_MAP = {
     "conversation": "Respond naturally and end with a question to keep the conversation going.",
