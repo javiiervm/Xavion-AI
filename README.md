@@ -13,156 +13,82 @@
 </div>
 <br /><br />
 
-A local, knowledge-aware conversational AI chatbot powered by [Ollama Llama3.1](https://ollama.com/library/llama3.1) that runs entirely on your machine.
+Xavion AI is a **local-first assistant** that runs entirely on your machine via **Ollama** and **LangChain**. It features streaming responses, intent detection, and easy prompt customization.
 <br /><br />
 
-## Features
+## Latest features
+* Switched to **Ollama + LangChain** (via `langchain-ollama`) using the `llama3.1` model by default.
+* Centralized prompting with **`instruction` + `knowledge` + `conversation_history`** blocks and **intent detection** helpers.
+* Removed the old HuggingFace/GODEL path from the core workflow (you can still adapt the new prompt builder if you want to experiment).
 
-* Based on Microsoft's `GODEL-v1_1-large-seq2seq` model (via Hugging Face)
-* Works offline once the model is downloaded
-* Uses structured prompts with `instruction`, `knowledge`, and `conversation_history` blocks
-* Supports custom external knowledge and dynamic learning using a JSON knowledge base
-* Responds dynamically to the user and adapts based on detected context
-* Easily extendable with your own facts, logic, or integrations
-
-## Requirements
-
-* Python 3.8+  *(Program has been tested with Python 3.13)*
-* Virtual Python environment to install packages (recommended, not mandatory)
-* Internet access (not mandatory when using the model offline)
-
-Install dependencies:
-
-```bash
-pip install -r requirements.txt
-```
+> If you previously followed the HF/GODEL instructions, please switch to **Ollama** and follow the Quickstart below.
 
 ## Project Structure
-
 ```
 Xavion-AI/
-├── chatbot/
-│   │   └── Modules/         # Folder for class declarations
-│   │       └── Command.py   # Class with the necessary methods to create a proper prompt before generating a response
-│   ├── model.py             # Loads the GODEL model and tokenizer
-│   ├── logic.py             # Prompt formatting and response generation
-│   ├── config.py            # Presets to load configuration parameters
-│   ├── keywords.py          # Keyword lists to filter results
-│   └── utils.py             # Auxiliar functions
-├── data/
-│   ├── knowledge.json       # Initial dictionary downloaded from the internet with createDic.py
-│   └── memory.json          # Custom dictionary where both user and AI can write new definitions
-├── auxiliar/
-│   └── test_model_load.py   # Script to test the loading of the model and tokenizer
-├── main.py                  # Main chat loop logic
-├── requirements.txt         # Packages which you need to install to run the chatbot
+├── assets/
+│   └── logo.png
+├── backend/                 # legacy helpers (kept for reference)
+│   ├── build_prompt.py
+│   └── ...
+├── frontend/                # **active GUI + core**
+│   ├── chatbot_core.py      # ChatbotCore: LangChain + Ollama pipeline (streaming)
+│   ├── build_prompt.py      # Prompt template + intent detection
+│   ├── gui.py               # Tkinter app (entry point)
+│   ├── gui_config.py        # Theme, colors, layout tokens
+│   ├── keywords.py          # Keyword lists for greeting/thanks/definitions etc.
+│   └── colors.py            # ANSI colors for logs/debug
+├── requirements.txt
 └── README.md
 ```
 
-## How to Run
+## Prerequisites
 
-1. Clone the repo and set up your environment:
+1. **Install Python 3.10+**  *(Program has been tested with Python 3.13)*
+2. **Install Ollama**
+
+   * macOS: `brew install ollama && ollama serve`
+   * Linux: follow the instructions at [https://ollama.com](https://ollama.com)
+   * Windows: install the official MSI, then ensure `ollama` is in PATH
+3. **Pull a model** (default: `llama3.1`):
+
+   ```bash
+   ollama pull llama3.1
+   ollama serve  # if not already running as a background service
+   ```
+
+## Quickstart
 
 ```bash
-git clone https://github.com/javiiervm/Xavion-AI.git
+# 1) Clone and enter the project
+# git clone https://github.com/javiiervm/Xavion-AI.git
 cd Xavion-AI
-python -m venv chatbot-env
-source chatbot-env/bin/activate  # On Windows: chatbot-env\Scripts\activate
-```
 
-2. Install dependencies:
+# 2) Create a virtual environment (use your preferred tool)
+python -m venv .venv
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
 
-```bash
+# 3) Install dependencies
 pip install -r requirements.txt
-```
 
-3. Download the [GODEL large model](https://huggingface.co/microsoft/GODEL-v1_1-large-seq2seq) and place the `GODEL-v1_1-large-seq2seq` folder in the same directory as `main.py` (for offline use).
-
-4. Run the chatbot:
-
-```bash
+# 4) Run the program
 python main.py
 ```
 
-## Example Usage
+## Troubleshooting
 
-```
->> What is Python?
-🤖 Python is a high-level programming language used for AI, automation, and data science.
+* **`ERR: connection refused`** — Ensure `ollama serve` is running.
+* **`model not found`** — Run `ollama pull llama3.1` (or switch the name).
+* **Windows** — Use `python -m venv .venv` and `.\.venv\Scripts\activate` in PowerShell.
 
->> Who is Pepe?
-🤖 Pepe is a friend of the user. He loves science fiction and has a black cat.
+## Roadmap
 
->> Hi!
-🤖 Hello! How can I help you today?
-```
+* [ ] More response modes and prompt presets.
 
-## How Knowledge Works
+## 🙌 Credits
 
-The chatbot uses a local files `data/knowledge.json` and `data/memory.json` to look up knowledge based on keywords in the user's message.
+* [Ollama](https://ollama.com) · [LangChain](https://python.langchain.com)
 
-Example entry:
+<br /><br />
+> Feedback and PRs welcome! Enjoy your new local‑first assistant. 🎧🤖
 
-```json
-{
-  "python": {
-    "knowledge": "Python is a high-level programming language used for AI, automation, and data science."
-  },
-  "pepe": {
-    "knowledge": "Pepe is a friend of the user. He loves science fiction and has a black cat."
-  }
-}
-```
-
-You can expand this file with your own knowledge entries or give definitions to the chatbot during your conversations. The chatbot will automatically include the most relevant fact in its response generation.
-
-## Model Configuration
-
-In `config.py`, you can tweak generation parameters like:
-
-* **mode**: Controls the generation behavior. Available options are:
-
-  * `"default"`: Balanced for general-purpose generation.
-  * `"creative"`: Generates more imaginative and open-ended responses.
-  * `"precise"`: Produces focused and accurate outputs, ideal for factual or structured tasks.
-
-### Default Mode Settings (`mode = "default"`):
-
-* `max_length = 128`: Maximum number of tokens in the output.
-* `min_length = 8`: Minimum number of tokens in the output.
-* `top_p = 0.9`: Uses nucleus sampling to consider the smallest possible set of tokens with cumulative probability ≥ `top_p`.
-* `do_sample = True`: Enables sampling for more diverse results.
-
-### Creative Mode Settings (`mode = "creative"`):
-
-* `temperature = 0.7`: Controls randomness in generation. Higher values make output more random.
-* `top_p = 0.9`: As in default mode, enables nucleus sampling.
-* `top_k = 50`: Limits sampling to the top 50 most likely tokens.
-* `max_length = 512`: Allows for longer output.
-* `do_sample = True`: Sampling is enabled for creative variety.
-
-### Precise Mode Settings (`mode = "precise"`):
-
-* `do_sample = False`: Disables sampling to favor deterministic results.
-* `num_beams = 3`: Beam search with 3 beams to explore multiple paths.
-* `early_stopping = True`: Stops generation when the best output is found early.
-* `max_length = 512`: Supports longer and more complete answers.
-
-You can switch modes or fine-tune individual parameters to fit your use case. This modular design allows for easy experimentation with different generation styles.
-
-## 📚 Resources Used
-
-* [Microsoft GODEL GitHub](https://github.com/microsoft/GODEL)
-* [Hugging Face Transformers](https://huggingface.co/docs/transformers)
-* [PyTorch](https://pytorch.org/)
-* [HuggingFace Model Hub: microsoft/GODEL-v1\_1-large-seq2seq](https://huggingface.co/microsoft/GODEL-v1_1-large-seq2seq)
-
-## TODO / Future Improvements
-
-* [x] Add support for math operations, greetings, and thanks
-* [ ] Add support for non-definition questions or other intentions
-* [ ] Fix issues with polysemia and conversation context
-* [ ] Add support for API-based knowledge retrieval (Wikipedia, Wolfram Alpha, etc.)
-* [ ] Export logs of conversations for analysis or training
-* [ ] Add a user interface for a more comfortable experience
-* [ ] Other
