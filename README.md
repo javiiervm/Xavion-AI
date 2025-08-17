@@ -1,17 +1,19 @@
-<br />
-<div align="center">
-  <img width="120" height="120" alt="Xavion AI logo" src="assets/logo.png" />
-
-  <h1 align="center">Xavion AI</h1>
-  <img src="https://img.shields.io/github/last-commit/javiiervm/Xavion-AI" />
-  <img src="https://img.shields.io/badge/python-3.10%2B-yellow" />
-  <img src="https://img.shields.io/badge/platform-linux%20%7C%20windows%20%7C%20macos-lightgrey" />
-  <img src="https://img.shields.io/github/issues/javiiervm/Xavion-AI" />
-  <img src="https://img.shields.io/github/stars/javiiervm/Xavion-AI" />
+<div align="center"> 
+   <img width="120" height="120" alt="Xavion AI logo" src="assets/logo.png" /> 
+   <h1 align="center">Xavion AI</h1> 
+   <img src="https://img.shields.io/github/last-commit/javiiervm/Xavion-AI" /> 
+   <img src="https://img.shields.io/badge/platform-linux%20%7C%20windows%20%7C%20macos-lightgrey" /> 
+   <img src="https://img.shields.io/github/issues/javiiervm/Xavion-AI" /> 
+   <img src="https://img.shields.io/github/stars/javiiervm/Xavion-AI" /> 
+   <br />
+   <img src="https://img.shields.io/badge/python-3.10%2B-yellow" /> 
+   <img src="https://img.shields.io/badge/ollama-0.5.3-blue" /> 
+   <img src="https://img.shields.io/badge/langchain-0.3.27-green" /> 
+   <img src="https://img.shields.io/badge/sqlalchemy-2.0.43-orange" /> 
 </div>
 <br /><br />
 
-A local, knowledge-aware conversational AI chatbot powered by [Microsoft GODEL](https://github.com/microsoft/GODEL). This chatbot runs entirely on your machine, supports structured prompts, and can reference custom knowledge stored in a local database.
+A local, knowledge-aware conversational AI chatbot powered by [Ollama Llama3.1](https://ollama.com/library/llama3.1) that runs entirely on your machine.
 <br /><br />
 
 ## Features
