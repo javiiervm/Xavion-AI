@@ -17,7 +17,7 @@ Xavion AI is a **local-first assistant** that runs entirely on your machine via 
 <br /><br />
 
 ## Latest features
-* Switched to **Ollama + LangChain** (via `langchain-ollama`) using the `llama3.1` model by default.
+* Switched to **Ollama + LangChain** (via `langchain-ollama`) using the `llama3.1` model by default (can be easily replaced for any other model).
 * Centralized prompting with **`instruction` + `knowledge` + `conversation_history`** blocks and **intent detection** helpers.
 * Removed the old HuggingFace/GODEL path from the core workflow (you can still adapt the new prompt builder if you want to experiment).
 
