@@ -1,5 +1,5 @@
 <div align="center"> 
-   <img width="120" height="120" alt="Xavion AI logo" src="assets/logo.png" /> 
+   <img width="120" height="120" alt="Xavion AI logo" src="https://github.com/javiiervm/Xavion-AI/blob/develop/assets/logo.png" /> 
    <h1 align="center">Xavion AI</h1> 
    <img src="https://img.shields.io/github/last-commit/javiiervm/Xavion-AI" /> 
    <img src="https://img.shields.io/badge/platform-linux%20%7C%20windows%20%7C%20macos-lightgrey" /> 
