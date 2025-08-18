@@ -2,7 +2,10 @@ from langchain_ollama import OllamaLLM
 from langchain_core.prompts import ChatPromptTemplate
 from langchain.callbacks.base import BaseCallbackHandler
 
-from backend.key_variables import TEMPLATES
+from backend.key_variables import TEMPLATES, COLORS
+
+
+import sys
 
 class CustomStreamingHandler(BaseCallbackHandler):
     def __init__(self):
@@ -10,12 +13,12 @@ class CustomStreamingHandler(BaseCallbackHandler):
 
     def on_llm_new_token(self, token: str, **kwargs) -> None:
         if self.first_token:
-            print("\n🤖 ", end="", flush=True)
+            print(f"\n{COLORS['BOLD']}", end="", flush=True)
             self.first_token = False
         print(token, end="", flush=True)
 
     def on_llm_end(self, *args, **kwargs):
-        print("\n")
+        print(f"\n{COLORS['RESET']}", end="\n", flush=True)
         self.first_token = True
 
 model = OllamaLLM(

@@ -13,7 +13,7 @@ def analyze_input(user_input, debug_mode):
             debug_mode = switch_debug_mode(debug_mode)
             print(f"{COLORS['BOLD']}🔁 Debug mode switched to: {COLORS['GREEN']}{'Enabled' if debug_mode else 'Disabled'}\n{COLORS['RESET']}")
         case "exit":
-            print(f"\n{COLORS['BOLD']}🤖 Goodbye!{COLORS['RESET']}\n")
+            print(f"\n{COLORS['BOLD']}Goodbye!{COLORS['RESET']}\n")
             return True, debug_mode
         case "help":
             print("Available commands:")
