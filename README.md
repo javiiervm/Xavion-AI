@@ -30,6 +30,7 @@ Xavion-AI/
 │   └── logo.png
 ├── backend/
 │   ├── __init__.py
+│   ├── auxiliar.py            # Auxiliar functions that can be reused anywhere
 │   ├── build_prompt.py        # Logic to detect intent and build the prompt for the model
 │   ├── build_response.py      # Logic to send the prompt to the model and generate a response
 │   ├── chat_workflow.py       # Logic to manage the chat interactions
