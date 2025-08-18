@@ -1,8 +1,7 @@
 from backend.build_prompt import build_prompt
 from backend.build_response import generate_response
+from backend.auxiliar import clear_terminal
 from backend.key_variables import COLORS, USER_COMMANDS
-
-import os
 
 def switch_debug_mode(current):
     return not current
@@ -26,7 +25,7 @@ def analyze_input(user_input, debug_mode):
     return None, debug_mode
 
 def start_chat(debug_mode):
-    os.system('clear')
+    clear_terminal()
     print(f"{COLORS['BOLD']}🤖 Welcome to Xavion AI 🤖\n{COLORS['RESET']}Write 'help' for a list of commands, or 'exit' to finish.\n")
 
     conversation_history = ""
