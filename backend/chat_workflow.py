@@ -30,7 +30,6 @@ def start_chat(debug_mode):
     print(f"{COLORS['BOLD']}🤖 Welcome to Xavion AI 🤖\n{COLORS['RESET']}Write 'help' for a list of commands, or 'exit' to finish.\n")
 
     conversation_history = ""
-    #response_mode = "default"
 
     while True:
         user_input = input(">> ").strip()
