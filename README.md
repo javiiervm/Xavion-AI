@@ -8,18 +8,5 @@
 <br /><br />
 
 
-<h1>
-  <span style="display: inline-flex; align-items: center;">
-    <img src="assets/logo-basic.png" alt="Logo" width="40" style="margin-right: 10px;">
-    Xavion AI
-  </span>
-</h1>
 
-
-
-
-
-
-
-<br />
 Feedback and PRs welcome! Enjoy your new local‑first assistant. 🎧🤖
