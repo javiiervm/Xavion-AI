@@ -8,13 +8,33 @@ COLORS = {
 
 USER_COMMANDS = ["debug", "exit", "help", "reset"]
 
+MATH_PATTERNS = [
+    r"what\s+is\s+([a-z\d\s\+\-\*\/\(\)\^\%\.]+)(?:\?)?$",
+    r"calculate\s+([a-z\d\s\+\-\*\/\(\)\^\%\.]+)(?:\?)?$",
+    r"compute\s+([a-z\d\s\+\-\*\/\(\)\^\%\.]+)(?:\?)?$",
+    r"solve\s+([a-z\d\s\+\-\*\/\(\)\^\%\.]+)(?:\?)?$",
+    r"^([a-z\d\s\+\-\*\/\(\)\^\%\.]+)(?:\?)?$"
+]
+
 TEMPLATES = {
     "conversation": """
 {instruction}
 
-This is some information you should know: {knowledge}
+Knowledge: {knowledge}
 
-Here is the conversation history: {conversation_history}
+Conversation history: {conversation_history}
+
+Question: {question}
+
+Answer:
+""",
+
+    "math": """
+{instruction}
+
+Math expressions: {expressions}
+
+Conversation history: {conversation_history}
 
 Question: {question}
 

@@ -39,11 +39,11 @@ def start_chat(debug_mode):
                 return user_command
 
         else:
-            instruction, intent = build_prompt(user_input, debug_mode, response_mode=None)
+            instruction, intent, keywords = build_prompt(user_input, debug_mode, response_mode=None)
             
             if debug_mode:
                 print(f"{COLORS['BOLD']}📝 Generating response...{COLORS['RESET']}")
 
-            response = generate_response(instruction, intent, conversation_history, user_input)
+            response = generate_response(instruction, intent, conversation_history, user_input, keywords)
 
             conversation_history += f"\nUser: {user_input}\nAI: {response}"
