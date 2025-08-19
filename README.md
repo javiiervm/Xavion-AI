@@ -8,17 +8,5 @@
 <br /><br />
 
 
-# Xavion Basic
 
-# Xavion Agent
-
-# Xavion Voice
-
-
-
-
-
-
-
-<br />
 Feedback and PRs welcome! Enjoy your new local‑first assistant. 🎧🤖
