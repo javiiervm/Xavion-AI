@@ -17,39 +17,36 @@ Xavion AI is a **local-first assistant** that runs entirely on your machine via 
 <br /><br />
 
 ## Latest features
-* Switched to **Ollama + LangChain** (via `langchain-ollama`) using the `llama3.1` model by default.
+* Switched to **Ollama + LangChain** (via `langchain-ollama`) using the `llama3.1` model by default (can be easily replaced for any other model).
 * Centralized prompting with **`instruction` + `knowledge` + `conversation_history`** blocks and **intent detection** helpers.
 * Removed the old HuggingFace/GODEL path from the core workflow (you can still adapt the new prompt builder if you want to experiment).
 
-> If you previously followed the HF/GODEL instructions, please switch to **Ollama** and follow the Quickstart below.
+> If you previously followed the HF/GODEL instructions, please switch to **Ollama** and follow the guide below.
 
 ## Project Structure
 ```
 Xavion-AI/
 ├── assets/
 │   └── logo.png
-├── backend/                 # legacy helpers (kept for reference)
-│   ├── build_prompt.py
-│   └── ...
-├── frontend/                # **active GUI + core**
-│   ├── chatbot_core.py      # ChatbotCore: LangChain + Ollama pipeline (streaming)
-│   ├── build_prompt.py      # Prompt template + intent detection
-│   ├── gui.py               # Tkinter app (entry point)
-│   ├── gui_config.py        # Theme, colors, layout tokens
-│   ├── keywords.py          # Keyword lists for greeting/thanks/definitions etc.
-│   └── colors.py            # ANSI colors for logs/debug
+├── backend/
+│   ├── __init__.py
+│   ├── build_prompt.py        # Logic to detect intent and build the prompt for the model
+│   ├── build_response.py      # Logic to send the prompt to the model and generate a response
+│   ├── chat_workflow.py       # Logic to manage the chat interactions
+│   └── key_variables.py       # Auxiliary variables that are stored here and called when necessary
+├── main.py
 ├── requirements.txt
 └── README.md
 ```
 
-## Prerequisites
+## Requirements
 
 1. **Install Python 3.10+**  *(Program has been tested with Python 3.13)*
 2. **Install Ollama**
 
-   * macOS: `brew install ollama && ollama serve`
-   * Linux: follow the instructions at [https://ollama.com](https://ollama.com)
-   * Windows: install the official MSI, then ensure `ollama` is in PATH
+   * macOS: `brew install ollama && ollama serve` or download from [here](https://ollama.com/download/mac)
+   * Linux: `curl -fsSL https://ollama.com/install.sh | sh`
+   * Windows: download from [here](https://ollama.com/download/windows), then ensure `ollama` is in PATH
 3. **Pull a model** (default: `llama3.1`):
 
    ```bash
@@ -57,21 +54,26 @@ Xavion-AI/
    ollama serve  # if not already running as a background service
    ```
 
-## Quickstart
-
+## Installation and usage
+1. Clone and enter the project.
 ```bash
-# 1) Clone and enter the project
-# git clone https://github.com/javiiervm/Xavion-AI.git
+git clone https://github.com/javiiervm/Xavion-AI.git
 cd Xavion-AI
+```
 
-# 2) Create a virtual environment (use your preferred tool)
+2. Create a virtual environment (use your preferred tool).
+```bash
 python -m venv .venv
 source .venv/bin/activate  # Windows: .venv\Scripts\activate
+```
 
-# 3) Install dependencies
+3. Install dependencies.
+```bash
 pip install -r requirements.txt
+```
 
-# 4) Run the program
+4. Run the program.
+```bash
 python main.py
 ```
 
@@ -81,14 +83,12 @@ python main.py
 * **`model not found`** — Run `ollama pull llama3.1` (or switch the name).
 * **Windows** — Use `python -m venv .venv` and `.\.venv\Scripts\activate` in PowerShell.
 
-## Roadmap
+## Resources used
 
-* [ ] More response modes and prompt presets.
+* [Ollama](https://ollama.com)
+* [LangChain](https://python.langchain.com)
 
-## 🙌 Credits
+<br />
 
-* [Ollama](https://ollama.com) · [LangChain](https://python.langchain.com)
-
-<br /><br />
-> Feedback and PRs welcome! Enjoy your new local‑first assistant. 🎧🤖
+Feedback and PRs welcome! Enjoy your new local‑first assistant. 🎧🤖
 

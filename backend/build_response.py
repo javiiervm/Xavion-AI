@@ -4,7 +4,6 @@ from langchain.callbacks.base import BaseCallbackHandler
 
 from backend.key_variables import TEMPLATES, COLORS
 
-
 import sys
 
 class CustomStreamingHandler(BaseCallbackHandler):
@@ -28,7 +27,9 @@ model = OllamaLLM(
     num_predict=512
 )
 
-def generate_response(instruction, intent, conversation_history, user_input):
+def generate_response(instruction, intent, conversation_history, user_input, keywords):
+    # AÑADIR KEYWORDS
+
     template = TEMPLATES[intent]
     params = {
         "instruction": instruction,
@@ -36,10 +37,10 @@ def generate_response(instruction, intent, conversation_history, user_input):
         "question": user_input
     }
 
-    if intent == "conversation":
+    if intent == "math":
+        params["expressions"] = ", ".join(keywords)
+    elif intent == "conversation":
         params["knowledge"] = "Your name is Xavion AI, you are an AI assistant that answers questions, helps with tasks or just have a conversation with users."
-    else:
-        params["knowledge"] = ""
     
     prompt = ChatPromptTemplate.from_template(template)
     chain = prompt | model

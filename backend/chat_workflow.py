@@ -1,8 +1,7 @@
 from backend.build_prompt import build_prompt
 from backend.build_response import generate_response
+from backend.auxiliar import clear_terminal
 from backend.key_variables import COLORS, USER_COMMANDS
-
-import os
 
 def switch_debug_mode(current):
     return not current
@@ -26,11 +25,10 @@ def analyze_input(user_input, debug_mode):
     return None, debug_mode
 
 def start_chat(debug_mode):
-    os.system('clear')
+    clear_terminal()
     print(f"{COLORS['BOLD']}🤖 Welcome to Xavion AI 🤖\n{COLORS['RESET']}Write 'help' for a list of commands, or 'exit' to finish.\n")
 
     conversation_history = ""
-    #response_mode = "default"
 
     while True:
         user_input = input(">> ").strip()
@@ -41,11 +39,11 @@ def start_chat(debug_mode):
                 return user_command
 
         else:
-            instruction, intent = build_prompt(user_input, debug_mode, response_mode=None)
+            instruction, intent, keywords = build_prompt(user_input, debug_mode, response_mode=None)
             
             if debug_mode:
                 print(f"{COLORS['BOLD']}📝 Generating response...{COLORS['RESET']}")
 
-            response = generate_response(instruction, intent, conversation_history, user_input)
+            response = generate_response(instruction, intent, conversation_history, user_input, keywords)
 
             conversation_history += f"\nUser: {user_input}\nAI: {response}"
