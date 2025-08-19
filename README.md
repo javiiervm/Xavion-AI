@@ -1,10 +1,10 @@
 <div align="center"> 
    <img width="120" height="120" alt="Xavion AI logo" src="https://github.com/javiiervm/Xavion-AI/blob/main/assets/logo-agent.png" /> 
    <h1 align="center">Xavion AI</h1> 
-   <img src="https://img.shields.io/github/last-commit/javiiervm/Xavion-AI" /> 
+   <img src="https://img.shields.io/github/last-commit/javiiervm/Xavion-AI/agent" /> 
    <img src="https://img.shields.io/badge/platform-linux%20%7C%20windows%20%7C%20macos-lightgrey" /> 
-   <img src="https://img.shields.io/github/issues/javiiervm/Xavion-AI" /> 
-   <img src="https://img.shields.io/github/stars/javiiervm/Xavion-AI" /> 
+   <img src="https://img.shields.io/github/issues/javiiervm/Xavion-AI?branch=agent" /> 
+   <img src="https://img.shields.io/github/stars/javiiervm/Xavion-AI?branch=agent" /> 
    <br />
    <img src="https://img.shields.io/badge/python-3.10%2B-yellow" /> 
    <img src="https://img.shields.io/badge/ollama-0.5.3-blue" /> 
