@@ -1,5 +1,5 @@
 <div align="center"> 
-   <img width="1536" height="200" alt="XAVION AI" src="https://github.com/javiiervm/Xavion-AI/blob/main/assets/banner.png" />
+   <img width="1536" height="200" alt="XAVION AI" src="https://github.com/javiiervm/Xavion-AI/blob/main/assets/github_banner.png" />
    <br /><br />
    <p><b>
       Your everyday AI partner and coding agent 🤖💻
