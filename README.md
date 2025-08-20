@@ -7,6 +7,22 @@
 </div>
 <br /><br />
 
+Text goes here...
+
+<br /><br />
+
+# 💭 [Xavion Basic](https://github.com/javiiervm/Xavion-AI/tree/basic)
+
+> Text goes here...
+
+# 💻 [Xavion Agent](https://github.com/javiiervm/Xavion-AI/tree/agent)
+
+> Text goes here...
+
+# 🎤 [Xavion Voice](https://github.com/javiiervm/Xavion-AI/tree/voice)
+
+> Text goes here...
 
 
+<br /><br />
 Feedback and PRs welcome! Enjoy your new local‑first assistant. 🎧🤖
