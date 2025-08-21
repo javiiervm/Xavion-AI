@@ -1,6 +1,6 @@
 <div align="center"> 
    <img width="150" height="150" alt="Xavion AI logo" src="https://github.com/javiiervm/Xavion-AI/blob/main/assets/logo-basic.png" /> 
-   <h1 align="center">Xavion AI</h1> 
+   <h1 align="center">Xavion Basic</h1> 
    <img src="https://img.shields.io/github/last-commit/javiiervm/Xavion-AI/basic" /> 
    <img src="https://img.shields.io/badge/platform-linux%20%7C%20windows%20%7C%20macos-lightgrey" /> 
    <img src="https://img.shields.io/github/issues/javiiervm/Xavion-AI?branch=basic" /> 
