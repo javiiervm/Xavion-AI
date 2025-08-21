@@ -17,14 +17,26 @@ Below you can find information about each specific version and what it is better
 # 💭 [Xavion Basic](https://github.com/javiiervm/Xavion-AI/tree/basic)
 
 **The best companion for daily tasks.**
+- Ask for information or concept definitions.
+- Generate or translate any text easily.
+- Solve math problems step by step.
+- Ask for code generations.
+- *User-friendly graphical UI under development, coming soon*.
 
 # 💻 [Xavion Agent](https://github.com/javiiervm/Xavion-AI/tree/agent)
 
 **The best for developers and programming tasks.**
+- Interact with Xavion AI from your terminal (no graphical UI).
+- Generates code and executes terminal commands for you.
+- Ask the agent to move or edit files, create projects, or perform any terminal task on your computer from natural language.
+- Ask for information, problem-solving, or any task from the Basic model.
 
 # 🎤 [Xavion Voice](https://github.com/javiiervm/Xavion-AI/tree/voice)
 
 **Your personal voice assistant.**
+- *Version under development, coming soon*.
+- Interact with Xavion AI with your voice.
+- Easy audio transcription.
 
 
 <br /><br />
