@@ -26,8 +26,6 @@ Xavion AI is a **local-first assistant** that runs entirely on your machine via 
 ## Project Structure
 ```
 Xavion-AI/
-├── assets/
-│   └── logo.png
 ├── backend/
 │   ├── __init__.py
 │   ├── build_prompt.py        # Logic to detect intent and build the prompt for the model
@@ -57,7 +55,7 @@ Xavion-AI/
 ## Installation and usage
 1. Clone and enter the project.
 ```bash
-git clone https://github.com/javiiervm/Xavion-AI.git
+git clone --branch basic --single-branch https://github.com/javiiervm/Xavion-AI.git
 cd Xavion-AI
 ```
 
