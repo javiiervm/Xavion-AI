@@ -28,8 +28,6 @@ model = OllamaLLM(
 )
 
 def generate_response(instruction, intent, conversation_history, user_input, keywords):
-    # AÑADIR KEYWORDS
-
     template = TEMPLATES[intent]
     params = {
         "instruction": instruction,

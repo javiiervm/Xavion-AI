@@ -24,7 +24,7 @@ def analyze_input(user_input, debug_mode):
             return False, debug_mode
     return None, debug_mode
 
-def start_chat(debug_mode):
+def start_chat(debug_mode, no_intent):
     clear_terminal()
     print(f"{COLORS['BOLD']}🤖 Welcome to Xavion AI 🤖\n{COLORS['RESET']}Write 'help' for a list of commands, or 'exit' to finish.\n")
 
@@ -39,7 +39,7 @@ def start_chat(debug_mode):
                 return user_command
 
         else:
-            instruction, intent, keywords = build_prompt(user_input, debug_mode, response_mode=None)
+            instruction, intent, keywords = build_prompt(user_input, debug_mode, no_intent, response_mode=None)     # No intent
             
             if debug_mode:
                 print(f"{COLORS['BOLD']}📝 Generating response...{COLORS['RESET']}")

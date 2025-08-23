@@ -9,11 +9,18 @@ COLORS = {
 USER_COMMANDS = ["debug", "exit", "help", "reset"]
 
 MATH_PATTERNS = [
-    r"what\s+is\s+([a-z\d\s\+\-\*\/\(\)\^\%\.]+)(?:\?)?$",
-    r"calculate\s+([a-z\d\s\+\-\*\/\(\)\^\%\.]+)(?:\?)?$",
-    r"compute\s+([a-z\d\s\+\-\*\/\(\)\^\%\.]+)(?:\?)?$",
-    r"solve\s+([a-z\d\s\+\-\*\/\(\)\^\%\.]+)(?:\?)?$",
-    r"^([a-z\d\s\+\-\*\/\(\)\^\%\.]+)(?:\?)?$"
+    r"what(?:\s+is|'s)\s+([\d\s\+\-\*\/\(\)\^\%\.]+(?:\s*(sqrt|log|ln|sin|cos|tan|pi|e))*)(?:\?)?$",
+    r"calculate\s+([\d\s\+\-\*\/\(\)\^\%\.]+(?:\s*(sqrt|log|ln|sin|cos|tan|pi|e))*)(?:\?)?$",
+    r"compute\s+([\d\s\+\-\*\/\(\)\^\%\.]+(?:\s*(sqrt|log|ln|sin|cos|tan|pi|e))*)(?:\?)?$",
+    r"solve\s+([\d\s\+\-\*\/\(\)\^\%\.]+(?:\s*(sqrt|log|ln|sin|cos|tan|pi|e))*)(?:\?)?$",
+    r"^([\d\s\+\-\*\/\(\)\^\%\.]*(?:sqrt|log|ln|sin|cos|tan|pi|e)[\d\s\+\-\*\/\(\)\^\%\.]*|[\d]+\s*[\+\-\*\/\^]\s*[\d\s\+\-\*\/\(\)\^\%\.]+)(?:\?)?$"
+]
+
+COUNTING_KEYWORDS = [
+    r"how\s+many",
+    r"total",
+    r"altogether",
+    r"in\s+total"
 ]
 
 TEMPLATES = {

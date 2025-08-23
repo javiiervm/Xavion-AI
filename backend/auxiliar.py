@@ -1,4 +1,4 @@
-from backend.key_variables import MATH_PATTERNS
+from backend.key_variables import MATH_PATTERNS, COUNTING_KEYWORDS
 
 import os
 import platform
@@ -35,10 +35,24 @@ def detect_math_expressions(user_input, debug_mode=False):
     for pattern in MATH_PATTERNS:
         for match in re.finditer(pattern, text):
             expression = match.group(1).strip()
-            if re.search(r"[\d\+\-\*\/\^]", expression) or re.search(r"\b(sqrt|log|sin|cos|tan|pi|e)\b", expression):
+
+            has_operator = re.search(r"[+\-*/^%]", expression)
+            has_function = re.search(r"\b(sqrt|log|ln|sin|cos|tan|pi|e)\b", expression)
+
+            if has_operator or has_function:
                 found_expressions.append(expression)
-            elif debug_mode:
-                print(f"❌ False positive: '{expression}' is not a valid math expression.")
+            else:
+                if debug_mode:
+                    print(f"❌ Rejected as plain number or text: '{expression}'")
+
+    if not found_expressions:
+        has_number = re.search(r"\d+", text)
+        has_keyword = any(re.search(kw, text) for kw in COUNTING_KEYWORDS)
+
+        if has_number and has_keyword:
+            if debug_mode:
+                print("✅ Detected counting-style math problem in natural language.")
+            found_expressions.append(text)
 
     if not found_expressions and debug_mode:
         print("❌ No math expressions detected.")

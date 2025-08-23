@@ -4,13 +4,13 @@ from backend.auxiliar import detect_math_expressions
 import re
 
 INSTRUCTION_MAP = {
-    "conversation": "Respond naturally and end with a question to keep the conversation going.",
-    "math": "Solve the math problem and provide the answer step by step." # Simple or complex
+    "conversation": "Respond naturally and keep the conversation going.",
+    "math": "Solve the math problem. If it is simple (like 2+2), answer naturally in one sentence (e.g., '2+2 is 4'). If it is more complex, explain the steps clearly and then give the final result."
 }
 
 def detect_intent(user_input, debug_mode=False):
     if debug_mode:
-        print(f"{COLORS['BOLD']}🔍 Detecting intent...{COLORS['RESET']}")
+        print(f"{COLORS['BOLD']}🔎 Detecting intent...{COLORS['RESET']}")
 
     # Check for math intent
     if debug_mode:
@@ -28,8 +28,12 @@ def detect_intent(user_input, debug_mode=False):
         print(f"{COLORS['BOLD']}✅ Detected conversation intent.{COLORS['RESET']}")
     return "conversation", None
 
-def build_prompt(user_input, debug_mode, response_mode=None):
-    intent, keywords = detect_intent(user_input, debug_mode)
+def build_prompt(user_input, debug_mode, no_intent=False, response_mode=None):
+    if no_intent:
+        intent = "conversation"
+        keywords = None
+    else:
+        intent, keywords = detect_intent(user_input, debug_mode)
     instruction = INSTRUCTION_MAP.get(intent)
 
     if not instruction:
