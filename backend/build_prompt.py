@@ -34,7 +34,7 @@ def build_prompt(user_input, debug_mode, no_intent=False, response_mode=None):
         keywords = None
     else:
         intent, keywords = detect_intent(user_input, debug_mode)
-    instruction = INSTRUCTION_MAP.get(intent)
+    instruction = INSTRUCTION_MAP.get(intent) + " Don't use markdown in your responses."
 
     if not instruction:
         raise ValueError(f"Instruction type '{instruction_type}' not found.")
