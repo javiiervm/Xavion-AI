@@ -18,13 +18,13 @@ def detect_intent(user_input, debug_mode=False):
     if debug_mode:
         print(f"{COLORS['BOLD']}❌ Rejected math intent.{COLORS['RESET']}")
 
-    # Default: conversation
+    # Default
     if debug_mode:
-        print(f"{COLORS['BOLD']}✅ Detected conversation intent.{COLORS['RESET']}")
-    return "conversation", None
+        print(f"{COLORS['BOLD']}✅ Set to conversation intent as default.{COLORS['RESET']}")
+    return "default", None
 
 def build_prompt(user_input, debug_mode, intent_mode):
-    if intent_mode != "default":
+    if intent_mode != "auto":
         intent = intent_mode
         if intent_mode == "math":
             keywords = detect_math_expressions(user_input, debug_mode)

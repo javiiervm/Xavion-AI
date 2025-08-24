@@ -36,6 +36,7 @@ def analyze_input(user_input, debug_mode):
             print(f"- {COLORS['BOLD']}'mode:name'{COLORS['RESET']}: Switch to specific response mode\n")
         case "mode":
             print(f"{COLORS['BOLD']}Available response modes:{COLORS['RESET']}")
+            print(f"- {COLORS['BOLD']}auto{COLORS['RESET']}")
             for mode_name in INSTRUCTION_MAP.keys():
                 print(f"- {COLORS['BOLD']}{mode_name}{COLORS['RESET']}")
             print()

@@ -1,5 +1,5 @@
 INSTRUCTION_MAP = {
-    "conversation": "Respond naturally and keep the conversation going.",
+    "default": "Respond naturally and keep the conversation going.",
     "math": "Solve the math problem. If it is simple (like 2+2), answer naturally in one sentence (e.g., '2+2 is 4'). If it is more complex, explain the steps clearly and then give the final result."
 }
 
@@ -29,7 +29,7 @@ COUNTING_KEYWORDS = [
 ]
 
 TEMPLATES = {
-    "conversation": """
+    "default": """
 {instruction}
 
 Knowledge: {knowledge}

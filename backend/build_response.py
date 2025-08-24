@@ -37,7 +37,7 @@ def generate_response(instruction, intent, conversation_history, user_input, key
 
     if intent == "math":
         params["expressions"] = ", ".join(keywords)
-    elif intent == "conversation":
+    elif intent == "default":
         params["knowledge"] = "Your name is Xavion AI, you are an AI assistant that answers questions, helps with tasks or just have a conversation with users."
     
     prompt = ChatPromptTemplate.from_template(template)

@@ -4,6 +4,6 @@ if __name__ == "__main__":
     print("Loading Xavion AI, please wait...", flush=True)
     debug_mode = False
     chat_finished = False
-    intent_mode = "default"
+    intent_mode = "auto"
     while not chat_finished:
         chat_finished = start_chat(debug_mode, intent_mode)
