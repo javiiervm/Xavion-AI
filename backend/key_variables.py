@@ -1,3 +1,8 @@
+INSTRUCTION_MAP = {
+    "conversation": "Respond naturally and keep the conversation going.",
+    "math": "Solve the math problem. If it is simple (like 2+2), answer naturally in one sentence (e.g., '2+2 is 4'). If it is more complex, explain the steps clearly and then give the final result."
+}
+
 COLORS = {
     "RESET": "\033[0m",
     "BOLD": "\033[1m", 
@@ -6,7 +11,7 @@ COLORS = {
     "YELLOW": "\033[93m"
 }
 
-USER_COMMANDS = ["debug", "exit", "help", "reset"]
+USER_COMMANDS = ["debug", "exit", "help", "reset", "mode"]
 
 MATH_PATTERNS = [
     r"what(?:\s+is|'s)\s+([\d\s\+\-\*\/\(\)\^\%\.]+(?:\s*(sqrt|log|ln|sin|cos|tan|pi|e))*)(?:\?)?$",
