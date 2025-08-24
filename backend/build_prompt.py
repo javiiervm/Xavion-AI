@@ -1,4 +1,4 @@
-from backend.key_variables import COLORS, MATH_PATTERNS, INSTRUCTION_MAP
+from backend.key_variables import COLORS, MATH_PATTERNS, INSTRUCTION_MAP, CODE_PATTERNS
 from backend.auxiliar import detect_math_expressions
 
 import re
@@ -17,6 +17,17 @@ def detect_intent(user_input, debug_mode=False):
         return "math", expressions
     if debug_mode:
         print(f"{COLORS['BOLD']}❌ Rejected math intent.{COLORS['RESET']}")
+
+    # Check for code intent
+    if debug_mode:
+        print(f"{COLORS['BOLD']}💡 Checking code intent...{COLORS['RESET']}")
+    code_patterns = [token for token in CODE_PATTERNS if token in user_input.lower()]
+    if code_patterns:
+        if debug_mode:
+            print(f"{COLORS['BOLD']}✅ Code patterns detected: {code_patterns}{COLORS['RESET']}")
+        return "code", None
+    if debug_mode:
+        print(f"{COLORS['BOLD']}❌ Rejected code intent.{COLORS['RESET']}")
 
     # Default
     if debug_mode:

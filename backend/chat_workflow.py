@@ -51,7 +51,8 @@ def start_chat(debug_mode, intent_mode):
     conversation_history = ""
 
     while True:
-        print(f"{COLORS['BOLD']}💡 Mode: {COLORS['GREEN']}{intent_mode}{COLORS['RESET']}\n", end="")
+        print(f"{COLORS['BOLD']}💡 Mode: {COLORS['GREEN']}{intent_mode.capitalize()}{COLORS['RESET']}", end="  |  ")
+        print(f"{COLORS['BOLD']}🐞 Debug: {COLORS['GREEN']}{'Enabled' if debug_mode else 'Disabled'}{COLORS['RESET']}")
         user_input = input(">> ").strip()
 
         if user_input.lower().startswith("mode:"):
