@@ -26,11 +26,14 @@ def clear_terminal():
         print("\n" * 100)
 
 def detect_math_expressions(user_input, debug_mode=False):
+    # Import here to avoid circular dependency
+    from backend.ui_components import print_debug_message
+    
     text = user_input.lower().strip()
     found_expressions = []
 
     if debug_mode:
-        print(f"🔎 Scanning for math expressions in: '{text}'")
+        print_debug_message(f"Scanning for math expressions in: '{text}'", icon="🔎")
 
     for pattern in MATH_PATTERNS:
         for match in re.finditer(pattern, text):
@@ -43,7 +46,7 @@ def detect_math_expressions(user_input, debug_mode=False):
                 found_expressions.append(expression)
             else:
                 if debug_mode:
-                    print(f"❌ Rejected as plain number or text: '{expression}'")
+                    print_debug_message(f"Rejected as plain number or text: '{expression}'", icon="❌")
 
     if not found_expressions:
         has_number = re.search(r"\d+", text)
@@ -51,10 +54,10 @@ def detect_math_expressions(user_input, debug_mode=False):
 
         if has_number and has_keyword:
             if debug_mode:
-                print("✅ Detected counting-style math problem in natural language.")
+                print_debug_message("Detected counting-style math problem in natural language.", icon="✅")
             found_expressions.append(text)
 
     if not found_expressions and debug_mode:
-        print("❌ No math expressions detected.")
+        print_debug_message("No math expressions detected.", icon="❌")
 
     return found_expressions

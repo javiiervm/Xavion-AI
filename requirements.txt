@@ -1,3 +1,6 @@
 langchain-core==0.3.74
 langchain-ollama==0.3.6
 ollama==0.5.3
+langchain
+rich>=13.7.0
+Pillow

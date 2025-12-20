@@ -1,7 +1,8 @@
 from backend.chat_workflow import start_chat
+from backend.ui_components import print_loading_message
 
 if __name__ == "__main__":
-    print("Loading Xavion AI, please wait...", flush=True)
+    print_loading_message()
     debug_mode = False
     chat_finished = False
     intent_mode = "auto"

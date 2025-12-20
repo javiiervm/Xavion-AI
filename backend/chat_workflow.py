@@ -1,72 +1,95 @@
 from backend.build_prompt import build_prompt
 from backend.build_response import generate_response
-from backend.auxiliar import clear_terminal
-from backend.key_variables import COLORS, USER_COMMANDS, INSTRUCTION_MAP
+from backend.key_variables import INSTRUCTION_MAP
+from backend.ui_components import (
+    console, print_success_message, print_info_message, print_error_message,
+    print_help_panel, print_mode_list, print_goodbye_message,
+    print_input_prompt, print_user_message, print_ai_message_start, 
+    print_ai_message_end, print_debug_message, clear_screen, print_welcome_banner,
+    print_welcome_image
+)
 
 def switch_debug_mode(current):
     return not current
 
 def switch_intent_mode(current, user_input):
-    mode = user_input.lower().split("mode:")[1].strip()
+    # Remove "/" prefix and parse mode
+    mode = user_input.lower().split("/mode:")[1].strip()
     if mode in INSTRUCTION_MAP:
-        print(f"{COLORS['BOLD']}🔄 Response mode switched to: {COLORS['GREEN']}{mode}{COLORS['RESET']}\n")
+        print_success_message(f"Response mode switched to: {mode}")
+        console.print()
         return mode
     else:
-        print(f"{COLORS['BOLD']}❌ Invalid mode. Available modes are:{COLORS['RESET']}")
+        print_error_message("Invalid mode. Available modes are:")
         for mode_name in INSTRUCTION_MAP.keys():
-            print(f"- {COLORS['BOLD']}{mode_name}{COLORS['RESET']}")
-        print()
+            console.print(f"  - [bold]{mode_name}[/bold]")
+        console.print()
         return None
 
 def analyze_input(user_input, debug_mode):
     match user_input.lower():
-        case "debug":
+        case "/debug":
             debug_mode = switch_debug_mode(debug_mode)
-            print(f"{COLORS['BOLD']}🔁 Debug mode switched to: {COLORS['GREEN']}{'Enabled' if debug_mode else 'Disabled'}\n{COLORS['RESET']}")
-        case "exit":
-            print(f"\n{COLORS['BOLD']}Goodbye!{COLORS['RESET']}\n")
+            status = "Enabled" if debug_mode else "Disabled"
+            print_success_message(f"Debug mode switched to: {status}")
+            console.print()
+        case "/exit":
+            print_goodbye_message()
             return True, debug_mode
-        case "help":
-            print("Available commands:")
-            print(f"- {COLORS['BOLD']}'debug'{COLORS['RESET']}: Toggle debug mode")
-            print(f"- {COLORS['BOLD']}'exit'{COLORS['RESET']}: Close the chat")
-            print(f"- {COLORS['BOLD']}'help'{COLORS['RESET']}: Show this command list")
-            print(f"- {COLORS['BOLD']}'reset'{COLORS['RESET']}: Start a new conversation")
-            print(f"- {COLORS['BOLD']}'mode'{COLORS['RESET']}: Show available response modes")
-            print(f"- {COLORS['BOLD']}'mode:name'{COLORS['RESET']}: Switch to specific response mode\n")
-        case "mode":
-            print(f"{COLORS['BOLD']}Available response modes:{COLORS['RESET']}")
-            print(f"- {COLORS['BOLD']}auto{COLORS['RESET']}")
-            for mode_name in INSTRUCTION_MAP.keys():
-                print(f"- {COLORS['BOLD']}{mode_name}{COLORS['RESET']}")
-            print()
-        case "reset":
+        case "/help":
+            print_help_panel()
+            console.print()
+        case "/mode":
+            modes = ["auto"] + list(INSTRUCTION_MAP.keys())
+            print_mode_list(modes)
+            console.print()
+        case "/reset":
             return False, debug_mode
     return None, debug_mode
 
 def start_chat(debug_mode, intent_mode):
-    clear_terminal()
-    print(f"{COLORS['BOLD']}🤖 Welcome to Xavion AI 🤖\n{COLORS['RESET']}Write 'help' for a list of commands, or 'exit' to finish.\n")
+    clear_screen()
+    print_welcome_banner()
+    print_info_message("Write '/help' for a list of commands, or '/exit' to finish.")
+    console.print()
 
     conversation_history = ""
 
     while True:
-        print(f"{COLORS['BOLD']}💡 Mode: {COLORS['GREEN']}{intent_mode.capitalize()}{COLORS['RESET']}", end="  |  ")
-        print(f"{COLORS['BOLD']}🐞 Debug: {COLORS['GREEN']}{'Enabled' if debug_mode else 'Disabled'}{COLORS['RESET']}")
-        user_input = input(">> ").strip()
+        # Show input box at bottom with status info (like Gemini CLI)
+        user_input = print_input_prompt(intent_mode, debug_mode).strip()
+        
+        # Box disappears after input - add spacing
+        console.print()
 
-        if user_input.lower().startswith("mode:"):
+        if user_input.lower().startswith("/mode:"):
             selected_mode = switch_intent_mode(intent_mode, user_input)
             if selected_mode is not None:
                 intent_mode = selected_mode
-        elif user_input.lower() in USER_COMMANDS:
+            console.print()  # Space before next input
+        elif user_input.lower() in ["/debug", "/exit", "/help", "/reset", "/mode"]:
             user_command, debug_mode = analyze_input(user_input, debug_mode)
             if user_command is not None:
                 return user_command
+            console.print()  # Space before next input
 
         else:
+            # Don't repeat user message - they just typed it
+            # print_user_message(user_input)
+            
+            # Build prompt and generate response
             instruction, intent, keywords = build_prompt(user_input, debug_mode, intent_mode)
             if debug_mode:
-                print(f"{COLORS['BOLD']}📝 Generating response...{COLORS['RESET']}")
+                print_debug_message(f"Intent detected: {intent}")
+                if keywords:
+                    print_debug_message(f"Keywords: {keywords}")
+            
+            # Print AI header and generate streaming response
+            print_ai_message_start()
             response = generate_response(instruction, intent, conversation_history, user_input, keywords)
+            print_ai_message_end()
+            
             conversation_history += f"\nUser: {user_input}\nAI: {response}"
+            
+            # Single line space before next input box appears
+            console.print()
