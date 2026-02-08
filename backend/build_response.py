@@ -3,34 +3,21 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.callbacks import BaseCallbackHandler
 
 from backend.key_variables import TEMPLATES, COLORS
-from backend.ui_components import console
 
 import sys
 
-class CustomStreamingHandler(BaseCallbackHandler):
-    def __init__(self):
-        self.first_token = True
+# Move CustomStreamingHandler to CLI frontend later or keep it as an option
+# For now, we make generate_response accept callbacks
 
-    def on_llm_new_token(self, token: str, **kwargs) -> None:
-        if self.first_token:
-            # Start bold text using original COLORS tag
-            print(f"{COLORS['BOLD']}", end="", flush=True)
-            self.first_token = False
-        print(token, end="", flush=True)
+def get_model(callbacks=None):
+    return OllamaLLM(
+        model="llama3.1",
+        callbacks=callbacks,
+        num_ctx=2048,
+        num_predict=512
+    )
 
-    def on_llm_end(self, *args, **kwargs):
-        # End bold text using original COLORS tag
-        print(f"{COLORS['RESET']}", end="\n", flush=True)
-        self.first_token = True
-
-model = OllamaLLM(
-    model="llama3.1",
-    callbacks=[CustomStreamingHandler()],
-    num_ctx=2048,
-    num_predict=512
-)
-
-def generate_response(instruction, intent, conversation_history, user_input, keywords):
+def generate_response(instruction, intent, conversation_history, user_input, keywords, callbacks=None):
     template = TEMPLATES[intent]
     params = {
         "instruction": instruction,
@@ -44,6 +31,7 @@ def generate_response(instruction, intent, conversation_history, user_input, key
         params["knowledge"] = "Your name is Xavion AI, you are an AI assistant that answers questions, helps with tasks or just have a conversation with users."
     
     prompt = ChatPromptTemplate.from_template(template)
+    model = get_model(callbacks=callbacks)
     chain = prompt | model
     response = chain.invoke(params)
     return response
