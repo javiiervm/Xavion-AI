@@ -78,8 +78,11 @@
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg> New conversation
       </button>
     </div>
-    <div class="flex-1 overflow-y-auto scrollbar-custom px-3">
-     <!-- Settings removed as requested -->
+    <div id="chat-history-container" class="flex-1 overflow-y-auto scrollbar-custom px-3">
+     <p class="text-xs text-slate-500 uppercase tracking-wider px-3 mb-2">Recent Chats</p>
+     <div id="chat-history-list" class="space-y-1">
+      <!-- Dynamic history items will be injected here -->
+     </div>
     </div>
    </aside>
 
@@ -134,6 +137,7 @@
   <script>
     let conversationHistory = "";
     let chatStarted = false;
+    let currentConversationId = null;
 
     const chatForm = document.getElementById('chat-form');
     const messageInput = document.getElementById('message-input');
@@ -144,6 +148,7 @@
     const inputArea = document.getElementById('input-area');
     const welcomeContainer = document.getElementById('welcome-container');
     const welcomeTitle = document.getElementById('welcome-title');
+    const chatHistoryList = document.getElementById('chat-history-list');
 
     const welcomeMessages = [
       "How can I help you today?",
@@ -162,6 +167,62 @@
 
     // Set initial welcome message
     setRandomWelcomeMessage();
+
+    async function loadChatHistory() {
+      try {
+        const response = await fetch('/conversations');
+        const conversations = await response.json();
+        
+        chatHistoryList.innerHTML = '';
+        conversations.forEach(conv => {
+          const item = document.createElement('div');
+          const isActive = conv.id === currentConversationId;
+          item.className = `sidebar-item ${isActive ? 'active' : ''} rounded-lg px-3 py-3 cursor-pointer transition-all duration-200`;
+          
+          // Format time
+          const date = new Date(conv.last_interaction * 1000);
+          const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          const isToday = new Date().toDateString() === date.toDateString();
+          const displayDate = isToday ? timeStr : date.toLocaleDateString();
+
+          item.innerHTML = `
+            <p class="text-sm ${isActive ? 'text-slate-200' : 'text-slate-400'} truncate font-medium">${conv.title}</p>
+            <p class="text-xs text-slate-500 mt-1">${displayDate}</p>
+          `;
+          
+          item.onclick = () => loadConversation(conv.id);
+          chatHistoryList.appendChild(item);
+        });
+      } catch (error) {
+        console.error("Error loading history:", error);
+      }
+    }
+
+    async function loadConversation(id) {
+      try {
+        const response = await fetch(`/conversations/${id}`);
+        const data = await response.json();
+        
+        currentConversationId = id;
+        conversationHistory = data.history;
+        chatStarted = true;
+        
+        // UI updates
+        welcomeContainer.classList.add('hidden');
+        chatContainer.classList.remove('hidden');
+        inputArea.classList.remove('hidden');
+        messagesContainer.innerHTML = '';
+        
+        data.messages.forEach(msg => {
+          addMessage(msg.role, msg.content);
+        });
+        
+        loadChatHistory(); // Update active state in sidebar
+        scrollToBottom();
+      } catch (error) {
+        console.error("Error loading conversation:", error);
+      }
+    }
 
     function autoResizeTextarea(textarea) {
       textarea.style.height = 'auto';
@@ -205,7 +266,8 @@
             message: text,
             history: conversationHistory,
             mode: "auto",
-            debug: false
+            debug: false,
+            conversation_id: currentConversationId
           })
         });
 
@@ -230,6 +292,8 @@
                 chatContainer.scrollTop = chatContainer.scrollHeight;
               } else if (data.done) {
                 conversationHistory = data.history;
+                currentConversationId = data.conversation_id;
+                loadChatHistory(); // Refresh sidebar
               }
             }
           }
@@ -318,15 +382,18 @@
 
     // Initialize state
     updateSidebarState();
+    loadChatHistory();
 
     toggleBtn.addEventListener('click', () => { sidebarOpen = !sidebarOpen; updateSidebarState(); });
     openBtn.addEventListener('click', () => { sidebarOpen = true; updateSidebarState(); });
 
     document.getElementById('new-chat-btn').addEventListener('click', () => {
       conversationHistory = "";
+      currentConversationId = null;
       messagesContainer.innerHTML = '';
       chatStarted = false;
       setRandomWelcomeMessage();
+      loadChatHistory();
       welcomeContainer.classList.remove('hidden');
       chatContainer.classList.add('hidden');
       inputArea.classList.add('hidden');
