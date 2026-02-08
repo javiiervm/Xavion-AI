@@ -4,3 +4,6 @@ ollama==0.5.3
 langchain
 rich>=13.7.0
 Pillow
+fastapi
+uvicorn
+jinja2
