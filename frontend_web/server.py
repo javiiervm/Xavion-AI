@@ -15,6 +15,7 @@ app = FastAPI(title="Xavion AI Web Interface")
 
 # Mount static files
 app.mount("/static", StaticFiles(directory="frontend_web/static"), name="static")
+app.mount("/assets", StaticFiles(directory="assets"), name="assets")
 templates = Jinja2Templates(directory="frontend_web/templates")
 
 class ChatRequest(BaseModel):
