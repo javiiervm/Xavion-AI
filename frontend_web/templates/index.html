@@ -280,6 +280,52 @@
     }
     .sidebar-item:hover { background: rgba(255, 255, 255, 0.05); }
     .sidebar-item.active { background: rgba(255, 255, 255, 0.1); border-left: 3px solid #FF4060; }
+
+    /* Voice Mode Styles */
+    .voice-mode-active #welcome-container,
+    .voice-mode-active #input-area,
+    .voice-mode-active #chat-container {
+      display: none !important;
+    }
+    
+    #voice-overlay {
+      display: none;
+    }
+    
+    .voice-mode-active #voice-overlay {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      animation: fadeInUp 0.5s ease-out;
+    }
+
+    .voice-bars {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      height: 20px;
+    }
+    .voice-bar {
+      width: 3px;
+      background-color: white;
+      border-radius: 2px;
+      height: 12px;
+    }
+    .voice-bar:nth-child(even) { height: 18px; }
+    
+    .voice-mode-btns:hover {
+      transform: none !important;
+    }
+
+    .logo-pulse {
+      animation: logoPulse 2s infinite ease-in-out;
+    }
+    @keyframes logoPulse {
+      0%, 100% { transform: scale(1); filter: drop-shadow(0 0 0px rgba(255, 64, 96, 0)); }
+      50% { transform: scale(1.05); filter: drop-shadow(0 0 30px rgba(255, 64, 96, 0.3)); }
+    }
   </style>
  </head>
  <body class="text-white overflow-hidden relative">
@@ -323,9 +369,26 @@
    <!-- Main Chat Area -->
    <main class="flex-1 flex flex-col h-full bg-transparent overflow-hidden relative">
     
+    <!-- Voice Conversation Overlay -->
+    <div id="voice-overlay" class="hidden">
+      <div class="text-center">
+        <div class="w-80 h-80 mx-auto mb-12 logo-pulse">
+          <img src="/assets/logo.png" alt="Xavion Logo" class="w-full h-full object-contain rounded-2xl">
+        </div>
+        <div class="flex items-center justify-center gap-6">
+          <button id="mute-voice-btn" class="liquid-glass-button voice-mode-btns w-16 h-16 rounded-full flex items-center justify-center text-white transition-all">
+            <svg id="mute-icon" class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>
+          </button>
+          <button id="exit-voice-btn" class="voice-mode-btns bg-red-500/20 hover:bg-red-500/40 border border-red-500/50 w-16 h-16 rounded-full flex items-center justify-center text-white transition-all">
+            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Welcome View -->
     <div id="welcome-container" class="flex-1 flex flex-col items-center justify-center px-4">
-     <div class="text-center mb-12">
+     <div class="text-center mb-12 welcome-content-box">
       <div class="w-72 h-72 mx-auto mb-2">
        <img src="/assets/logo.png" alt="Xavion Logo" class="w-full h-full object-contain rounded-2xl">
       </div>
@@ -338,8 +401,18 @@
           <button type="button" id="mic-btn-welcome" class="mic-btn-liquid w-11 h-11 rounded-full flex items-center justify-center text-white">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>
           </button>
-          <button type="submit" class="send-btn-liquid liquid-glass-button w-11 h-11 rounded-full flex items-center justify-center shadow-lg border border-white/20">
-            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
+          <button type="submit" id="send-btn-welcome" class="send-btn-liquid liquid-glass-button w-11 h-11 rounded-full flex items-center justify-center shadow-lg border border-white/20">
+            <div class="send-icon">
+              <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
+            </div>
+            <div class="voice-bars-icon hidden">
+              <div class="voice-bars">
+                <div class="voice-bar"></div>
+                <div class="voice-bar"></div>
+                <div class="voice-bar"></div>
+                <div class="voice-bar"></div>
+              </div>
+            </div>
           </button>
         </div>
       </div>
@@ -364,7 +437,17 @@
              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>
            </button>
            <button type="submit" id="send-btn" class="send-btn-liquid liquid-glass-button w-11 h-11 rounded-full flex items-center justify-center shadow-lg border border-white/20">
-             <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
+             <div class="send-icon">
+               <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
+             </div>
+             <div class="voice-bars-icon hidden">
+               <div class="voice-bars">
+                 <div class="voice-bar"></div>
+                 <div class="voice-bar"></div>
+                 <div class="voice-bar"></div>
+                 <div class="voice-bar"></div>
+               </div>
+             </div>
            </button>
          </div>
        </div>
@@ -389,6 +472,61 @@
     const welcomeContainer = document.getElementById('welcome-container');
     const welcomeTitle = document.getElementById('welcome-title');
     const chatHistoryList = document.getElementById('chat-history-list');
+    
+    // Voice Mode Elements
+    const voiceOverlay = document.getElementById('voice-overlay');
+    const muteVoiceBtn = document.getElementById('mute-voice-btn');
+    const exitVoiceBtn = document.getElementById('exit-voice-btn');
+    const sendBtn = document.getElementById('send-btn');
+    const sendBtnWelcome = document.getElementById('send-btn-welcome');
+    
+    let isVoiceMode = false;
+    let isVoiceMuted = false;
+
+    function updateSendButtonState(input) {
+      const form = input.closest('form');
+      const btn = form.querySelector('button[type="submit"]');
+      const sendIcon = btn.querySelector('.send-icon');
+      const voiceIcon = btn.querySelector('.voice-bars-icon');
+      
+      if (input.value.trim().length > 0) {
+        sendIcon.classList.remove('hidden');
+        voiceIcon.classList.add('hidden');
+        btn.dataset.mode = 'send';
+      } else {
+        sendIcon.classList.add('hidden');
+        voiceIcon.classList.remove('hidden');
+        btn.dataset.mode = 'voice';
+      }
+    }
+
+    function toggleVoiceMode(active) {
+      isVoiceMode = active;
+      if (active) {
+        document.body.classList.add('voice-mode-active');
+        // If we are in voice mode, we should probably start a specific recognition or interaction
+        console.log("Voice Conversation Mode Activated");
+      } else {
+        document.body.classList.remove('voice-mode-active');
+        console.log("Voice Conversation Mode Deactivated");
+      }
+    }
+
+    muteVoiceBtn.addEventListener('click', () => {
+      isVoiceMuted = !isVoiceMuted;
+      const icon = muteVoiceBtn.querySelector('#mute-icon');
+      if (isVoiceMuted) {
+        icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />';
+        muteVoiceBtn.classList.add('bg-red-500/20');
+      } else {
+        icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />';
+        muteVoiceBtn.classList.remove('bg-red-500/20');
+      }
+    });
+
+    exitVoiceBtn.addEventListener('click', () => {
+      toggleVoiceMode(false);
+    });
 
     const welcomeMessages = [
       "How can I help you today?",
@@ -514,8 +652,12 @@
     }
 
     [messageInput, messageInputWelcome].forEach(input => {
+      // Initialize state
+      updateSendButtonState(input);
+      
       input.addEventListener('input', function() { 
         autoResizeTextarea(this); 
+        updateSendButtonState(this);
         // Stop shine if there is text
         const container = this.closest('.glass-shine');
         if (container) {
@@ -570,6 +712,9 @@
         el.classList.remove('mic-dictating');
       });
       
+      updateSendButtonState(messageInput);
+      updateSendButtonState(messageInputWelcome);
+      
       const aiMessageDiv = addMessage('assistant', '');
       const aiContentPara = aiMessageDiv.querySelector('.content-para');
       showTypingIndicator(aiMessageDiv);
@@ -620,8 +765,25 @@
       }
     }
 
-    chatForm.addEventListener('submit', e => { e.preventDefault(); sendMessage(messageInput.value.trim()); });
-    chatFormWelcome.addEventListener('submit', e => { e.preventDefault(); sendMessage(messageInputWelcome.value.trim()); });
+    chatForm.addEventListener('submit', e => { 
+      e.preventDefault(); 
+      const btn = chatForm.querySelector('button[type="submit"]');
+      if (btn.dataset.mode === 'voice') {
+        toggleVoiceMode(true);
+      } else {
+        sendMessage(messageInput.value.trim()); 
+      }
+    });
+    
+    chatFormWelcome.addEventListener('submit', e => { 
+      e.preventDefault(); 
+      const btn = chatFormWelcome.querySelector('button[type="submit"]');
+      if (btn.dataset.mode === 'voice') {
+        toggleVoiceMode(true);
+      } else {
+        sendMessage(messageInputWelcome.value.trim()); 
+      }
+    });
 
     function addMessage(role, content) {
       const messageDiv = document.createElement('div');
