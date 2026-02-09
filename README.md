@@ -95,7 +95,7 @@ Choose your preferred interface:
 
 **Terminal CLI:**
 ```bash
-python main.py --CLI
+python main.py --cli
 ```
 
 **Web Interface:**
