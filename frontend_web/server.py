@@ -11,7 +11,10 @@ from pydantic import BaseModel
 import uvicorn
 import json
 import asyncio
+import edge_tts
 from typing import List, Optional
+from fastapi.responses import HTMLResponse, StreamingResponse, Response
+from starlette.background import BackgroundTask
 
 from backend.core import process_message
 from langchain_core.callbacks import BaseCallbackHandler
@@ -181,6 +184,23 @@ async def chat_endpoint(request: ChatRequest):
         })}\n\n"
 
     return StreamingResponse(generate(), media_type="text/event-stream")
+
+@app.get("/tts")
+async def text_to_speech(text: str, voice: str = "es-ES-AlvaroNeural"):
+    if not text:
+        raise HTTPException(status_code=400, detail="Text is required")
+    
+    try:
+        communicate = edge_tts.Communicate(text, voice)
+        
+        async def audio_generator():
+            async for chunk in communicate.stream():
+                if chunk["type"] == "audio":
+                    yield chunk["data"]
+        
+        return StreamingResponse(audio_generator(), media_type="audio/mpeg")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 def start_server(port=8000):
     uvicorn.run(app, host="0.0.0.0", port=port)

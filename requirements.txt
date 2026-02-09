@@ -7,3 +7,5 @@ Pillow
 fastapi
 uvicorn
 jinja2
+edge-tts
+python-multipart
