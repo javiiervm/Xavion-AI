@@ -57,6 +57,15 @@
     .scrollbar-custom::-webkit-scrollbar-track { background: rgba(153, 0, 204, 0.05); border-radius: 3px; }
     .scrollbar-custom::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #FF4060, #9900CC); border-radius: 3px; }
     .logo-icon { background: linear-gradient(180deg, #FF9F60 0%, #FF4060 35%, #FFB6C1 50%, #9900CC 65%, #002080 100%); }
+    @keyframes pulse {
+      0% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.2); opacity: 0.7; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .mic-active {
+      color: #FF4060 !important;
+      animation: pulse 1.5s infinite;
+    }
     .sidebar-item:hover { background: linear-gradient(90deg, rgba(153,0,204,0.1), transparent); }
     .sidebar-item.active { background: linear-gradient(90deg, rgba(153,0,204,0.15), transparent); border-left: 3px solid #9900CC; }
   </style>
@@ -103,10 +112,15 @@
      </div>
      <form id="chat-form-welcome" class="relative w-full max-w-2xl">
       <div class="relative gradient-border rounded-[2rem] overflow-hidden glow-effect">
-        <textarea id="message-input-welcome" rows="1" placeholder="Type your message..." class="w-full bg-slate-900/90 text-white placeholder-slate-500 px-6 py-4 pr-14 resize-none focus:outline-none input-glow rounded-[2rem] text-base" style="max-height: 200px;"></textarea>
-        <button type="submit" class="send-btn absolute right-2 bottom-2 w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg">
-          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
-        </button>
+        <textarea id="message-input-welcome" rows="1" placeholder="Type your message..." class="w-full bg-slate-900/90 text-white placeholder-slate-500 px-6 py-4 pr-28 resize-none focus:outline-none input-glow rounded-[2rem] text-base" style="max-height: 200px;"></textarea>
+        <div class="absolute right-2 bottom-2 flex gap-2">
+          <button type="button" id="mic-btn-welcome" class="w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 text-slate-400 hover:bg-slate-800">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>
+          </button>
+          <button type="submit" class="send-btn w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg">
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
+          </button>
+        </div>
       </div>
      </form>
     </div>
@@ -123,10 +137,15 @@
      <div class="max-w-3xl mx-auto">
       <form id="chat-form" class="relative">
        <div class="relative gradient-border rounded-[2rem] overflow-hidden glow-effect">
-         <textarea id="message-input" rows="1" placeholder="Type your message..." class="w-full bg-slate-900/90 text-white placeholder-slate-500 px-6 py-4 pr-14 resize-none focus:outline-none input-glow rounded-[2rem] text-base" style="max-height: 200px;"></textarea>
-         <button type="submit" id="send-btn" class="send-btn absolute right-2 bottom-2 w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg">
-           <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
-         </button>
+         <textarea id="message-input" rows="1" placeholder="Type your message..." class="w-full bg-slate-900/90 text-white placeholder-slate-500 px-6 py-4 pr-28 resize-none focus:outline-none input-glow rounded-[2rem] text-base" style="max-height: 200px;"></textarea>
+         <div class="absolute right-2 bottom-2 flex gap-2">
+           <button type="button" id="mic-btn" class="w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 text-slate-400 hover:bg-slate-800">
+             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>
+           </button>
+           <button type="submit" id="send-btn" class="send-btn w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg">
+             <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
+           </button>
+         </div>
        </div>
       </form>
      </div>
@@ -177,7 +196,7 @@
         conversations.forEach(conv => {
           const item = document.createElement('div');
           const isActive = conv.id === currentConversationId;
-          item.className = `sidebar-item ${isActive ? 'active' : ''} rounded-lg px-3 py-3 cursor-pointer transition-all duration-200`;
+          item.className = `sidebar-item group relative ${isActive ? 'active' : ''} rounded-lg px-3 py-3 cursor-pointer transition-all duration-200`;
           
           // Format time
           const date = new Date(conv.last_interaction * 1000);
@@ -186,15 +205,59 @@
           const displayDate = isToday ? timeStr : date.toLocaleDateString();
 
           item.innerHTML = `
-            <p class="text-sm ${isActive ? 'text-slate-200' : 'text-slate-400'} truncate font-medium">${conv.title}</p>
-            <p class="text-xs text-slate-500 mt-1">${displayDate}</p>
+            <div class="flex flex-col pr-8" onclick="loadConversation('${conv.id}')">
+              <p class="text-sm ${isActive ? 'text-slate-200' : 'text-slate-400'} truncate font-medium title-text">${conv.title}</p>
+              <p class="text-xs text-slate-500 mt-1">${displayDate}</p>
+            </div>
+            <div class="absolute right-2 top-1/2 -translate-y-1/2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button onclick="event.stopPropagation(); renameConversation('${conv.id}', '${conv.title.replace(/'/g, "\\'")}')" class="p-1 hover:text-white text-slate-500" title="Rename">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+              </button>
+              <button onclick="event.stopPropagation(); deleteConversation('${conv.id}')" class="p-1 hover:text-red-400 text-slate-500" title="Delete">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+              </button>
+            </div>
           `;
           
-          item.onclick = () => loadConversation(conv.id);
           chatHistoryList.appendChild(item);
         });
       } catch (error) {
         console.error("Error loading history:", error);
+      }
+    }
+
+    async function deleteConversation(id) {
+      if (!confirm("Are you sure you want to delete this conversation?")) return;
+      
+      try {
+        const response = await fetch(`/conversations/${id}`, { method: 'DELETE' });
+        if (response.ok) {
+          if (currentConversationId === id) {
+            document.getElementById('new-chat-btn').click();
+          } else {
+            loadChatHistory();
+          }
+        }
+      } catch (error) {
+        console.error("Error deleting conversation:", error);
+      }
+    }
+
+    async function renameConversation(id, currentTitle) {
+      const newTitle = prompt("Enter new title:", currentTitle);
+      if (!newTitle || newTitle === currentTitle) return;
+      
+      try {
+        const response = await fetch(`/conversations/${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title: newTitle })
+        });
+        if (response.ok) {
+          loadChatHistory();
+        }
+      } catch (error) {
+        console.error("Error renaming conversation:", error);
       }
     }
 
@@ -239,9 +302,21 @@
       });
     });
 
+    let activeRecognitions = [];
+
+    function stopAllSpeechRecognition() {
+      activeRecognitions.forEach(item => {
+        if (item.isListening) {
+          item.recognition.stop();
+        }
+      });
+    }
+
     async function sendMessage(text) {
       if (!text) return;
       
+      stopAllSpeechRecognition();
+
       if (!chatStarted) {
         chatStarted = true;
         welcomeContainer.classList.add('hidden');
@@ -265,7 +340,6 @@
           body: JSON.stringify({
             message: text,
             history: conversationHistory,
-            mode: "auto",
             debug: false,
             conversation_id: currentConversationId
           })
@@ -379,6 +453,81 @@
         openBtn.style.pointerEvents = 'auto';
       }
     }
+
+    // Voice Dictation Logic
+    function setupVoiceDictation(btnId, inputId) {
+      const btn = document.getElementById(btnId);
+      const input = document.getElementById(inputId);
+      const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+      if (!Recognition) {
+        btn.style.display = 'none';
+        return;
+      }
+
+      const recognition = new Recognition();
+      // Spanish with support for English terms in many engines
+      recognition.lang = 'es-ES'; 
+      recognition.continuous = true;
+      recognition.interimResults = true;
+
+      let state = {
+        recognition: recognition,
+        isListening: false,
+        btn: btn
+      };
+      activeRecognitions.push(state);
+
+      btn.addEventListener('click', () => {
+        if (state.isListening) {
+          recognition.stop();
+        } else {
+          recognition.start();
+        }
+      });
+
+      recognition.onstart = () => {
+        state.isListening = true;
+        btn.classList.add('mic-active');
+      };
+
+      recognition.onend = () => {
+        state.isListening = false;
+        btn.classList.remove('mic-active');
+      };
+
+      recognition.onresult = (event) => {
+        let interim_transcript = '';
+        let final_transcript = '';
+
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            final_transcript += event.results[i][0].transcript;
+          } else {
+            interim_transcript += event.results[i][0].transcript;
+          }
+        }
+
+        if (final_transcript) {
+          const currentPos = input.selectionStart;
+          const textBefore = input.value.substring(0, currentPos);
+          const textAfter = input.value.substring(currentPos);
+          
+          input.value = textBefore + (textBefore && !textBefore.endsWith(' ') ? ' ' : '') + final_transcript + textAfter;
+          autoResizeTextarea(input);
+        }
+      };
+
+      recognition.onerror = (event) => {
+        console.error("Speech recognition error:", event.error);
+        if (event.error === 'no-speech') return;
+        state.isListening = false;
+        btn.classList.remove('mic-active');
+      };
+    }
+
+    setupVoiceDictation('mic-btn-welcome', 'message-input-welcome');
+    setupVoiceDictation('mic-btn', 'message-input');
 
     // Initialize state
     updateSidebarState();

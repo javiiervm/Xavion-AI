@@ -30,7 +30,6 @@ templates = Jinja2Templates(directory="frontend_web/templates")
 class ChatRequest(BaseModel):
     message: str
     history: str = ""
-    mode: str = "auto"
     debug: bool = False
     conversation_id: Optional[str] = None
 
@@ -72,6 +71,34 @@ async def get_conversation(conv_id: str):
     with open(file_path, 'r', encoding='utf-8') as f:
         return json.load(f)
 
+@app.delete("/conversations/{conv_id}")
+async def delete_conversation(conv_id: str):
+    file_path = os.path.join(DATA_DIR, f"{conv_id}.json")
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    
+    os.remove(file_path)
+    return {"status": "success"}
+
+class RenameRequest(BaseModel):
+    title: str
+
+@app.patch("/conversations/{conv_id}")
+async def rename_conversation(conv_id: str, request: RenameRequest):
+    file_path = os.path.join(DATA_DIR, f"{conv_id}.json")
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    
+    with open(file_path, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+    
+    data["title"] = request.title
+    
+    with open(file_path, 'w', encoding='utf-8') as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+    
+    return {"status": "success", "title": request.title}
+
 class WebStreamingHandler(BaseCallbackHandler):
     def __init__(self, queue: asyncio.Queue, loop: asyncio.AbstractEventLoop):
         self.queue = queue
@@ -105,7 +132,7 @@ async def chat_endpoint(request: ChatRequest):
             process_message,
             request.message,
             request.history,
-            intent_mode=request.mode,
+            intent_mode="auto",
             debug_mode=request.debug,
             callbacks=[handler]
         ))
