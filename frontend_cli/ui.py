@@ -13,9 +13,50 @@ from rich.text import Text
 from rich.syntax import Syntax
 from rich import box
 import time
+import os
+import platform
+from langchain_core.callbacks import BaseCallbackHandler
+from backend.key_variables import COLORS
 
 # Initialize the global console
 console = Console()
+
+class CustomStreamingHandler(BaseCallbackHandler):
+    def __init__(self):
+        self.first_token = True
+
+    def on_llm_new_token(self, token: str, **kwargs) -> None:
+        if self.first_token:
+            # Start bold text using original COLORS tag
+            print(f"{COLORS['BOLD']}", end="", flush=True)
+            self.first_token = False
+        print(token, end="", flush=True)
+
+    def on_llm_end(self, *args, **kwargs):
+        # End bold text using original COLORS tag
+        print(f"{COLORS['RESET']}", end="\n", flush=True)
+        self.first_token = True
+
+def detect_terminal():
+    system_name = platform.system()
+
+    if system_name == "Linux" or system_name == "Darwin":
+        return "clear"
+    elif system_name == "Windows":
+        shell = os.environ.get("SHELL", "")
+        if "bash" in shell.lower():
+            return "clear"
+        else:
+            return "cls"
+    else:
+        return None
+
+def clear_terminal():
+    command = detect_terminal()
+    if command:
+        os.system(command)
+    else:
+        print("\n" * 100)
 
 def print_welcome_banner():
     """Display the animated welcome banner"""
