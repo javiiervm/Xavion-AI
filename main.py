@@ -5,13 +5,13 @@ from frontend_web.server import start_server
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Xavion AI - Multi-frontend Assistant")
-    parser.add_argument("--CLI", action="store_true", help="Start the Command Line Interface")
+    parser.add_argument("--cli", action="store_true", help="Start the Command Line Interface")
     parser.add_argument("--web", action="store_true", help="Start the Web Interface")
     parser.add_argument("--port", type=int, default=8000, help="Port for the web server (default: 8000)")
     
     args = parser.parse_args()
 
-    if args.CLI:
+    if args.cli:
         print_loading_message()
         debug_mode = False
         chat_finished = False
@@ -24,5 +24,5 @@ if __name__ == "__main__":
     else:
         print("\n[!] Please specify a frontend to start.")
         print("    Usage:")
-        print("    - CLI: python main.py --CLI")
+        print("    - CLI: python main.py --cli")
         print("    - Web: python main.py --web [--port 8000]\n")

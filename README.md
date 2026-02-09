@@ -10,35 +10,41 @@
     <img src="https://img.shields.io/badge/python-3.10%2B-yellow" alt="Python Version" />
     <img src="https://img.shields.io/badge/ollama-0.5.3-blue" alt="Ollama Version" />
     <img src="https://img.shields.io/badge/langchain-0.3.27-green" alt="LangChain Version" />
+    <img src="https://img.shields.io/badge/fastapi-0.115.0-blue" alt="FastAPI Version" />
     <img src="https://img.shields.io/badge/rich-13.7.0-magenta" alt="Rich Version" />
   </p>
 </div><br />
 
-Xavion AI is a **local-first assistant** that runs entirely on your machine using **Ollama** for local inference and **LangChain** for robust orchestration, providing a seamless, low-latency experience. Inspired by modern CLI design patterns, it provides a rich, interactive environment featuring intent-aware responses, streaming output, and high-fidelity terminal formatting.
+Xavion AI is a **local-first assistant** that runs entirely on your machine using **Ollama** for local inference and **LangChain** for robust orchestration, providing a seamless, low-latency experience. It features a dual-interface system: a high-fidelity **Terminal CLI** and a modern **Web Interface**, both powered by a shared, frontend-agnostic backend.
 
 ## Main Features
 
 - **Privacy-First Offline Architecture**: Runs 100% locally on your machine. No API keys, no telemetry, no data leaks.
+- **Dual Interface Support**:
+  - **Terminal CLI**: Rich, interactive environment with gradient banners and syntax highlighting.
+  - **Web UI**: Modern, responsive interface built with Tailwind CSS and FastAPI, supporting real-time SSE streaming.
 - **Intelligent Intent Detection**: Automatically switches context between general conversation, mathematical computation, and software engineering tasks.
-- **Immersive Terminal UI**: Powered by `rich`, featuring:
-  - Gradient-style welcome banners and loading animations.
-  - Syntax-highlighted code blocks with streaming output.
-  - Real-time status bars and formatted diagnostic panels.
-- **Extensible Logic**: Modular architecture allows for easy customization of system prompts, model parameters, and interaction workflows.
-- **Session Persistence**: Maintains context-aware conversation history for coherent multi-turn interactions.
+- **Immersive UX**: Real-time streaming output, syntax-highlighted code blocks, and adaptive status feedback across both interfaces.
+- **Decoupled Backend**: Modular architecture that separates core AI logic from the UI, ensuring consistent behavior across different frontends.
 
 ## Project Architecture
 
 ```text
 Xavion-AI/
 ├── backend/
-│   ├── build_prompt.py      # Dynamic prompt engineering & intent classification
-│   ├── build_response.py    # LLM orchestration via LangChain-Ollama
-│   ├── chat_workflow.py     # Main interaction loop & session management
-│   ├── ui_components.py     # Advanced terminal rendering & layout
-│   ├── auxiliar.py          # Utility functions (regex, system checks)
-│   └── key_variables.py     # Configuration constants & mode definitions
-├── main.py                  # Application entry point
+│   ├── core.py              # Main API entry point (Frontend-agnostic)
+│   ├── build_prompt.py      # Intent detection & prompt engineering
+│   ├── build_response.py    # Model orchestration via LangChain
+│   ├── auxiliar.py          # Math detection & general utilities
+│   └── key_variables.py     # Constants, patterns, and prompt templates
+├── frontend_cli/            # Terminal Interface
+│   ├── ui.py                # Rich terminal UI components
+│   └── workflow.py          # CLI-specific chat loop
+├── frontend_web/            # Web Interface
+│   ├── server.py            # FastAPI server & SSE streaming
+│   ├── static/              # CSS/JS assets (Tailwind)
+│   └── templates/           # Jinja2 HTML templates
+├── main.py                  # Multi-frontend dispatcher
 ├── requirements.txt         # Dependency manifest
 └── README.md                # Documentation
 ```
@@ -57,7 +63,7 @@ Xavion-AI/
 
 ### 1. Clone the Repository
 ```bash
-git clone --branch basic --single-branch https://github.com/javiiervm/Xavion-AI.git
+git clone https://github.com/javiiervm/Xavion-AI.git
 cd Xavion-AI
 ```
 
@@ -79,18 +85,27 @@ pip install -r requirements.txt
 ```
 
 ### 4. Launch Ollama
+Ensure the Ollama service is running:
 ```bash
 ollama serve
 ```
 
 ### 5. Launch Xavion AI
+Choose your preferred interface:
+
+**Terminal CLI:**
 ```bash
-python main.py
+python main.py --CLI
 ```
 
-## Command Interface
+**Web Interface:**
+```bash
+python main.py --web [--port 8000]
+```
 
-Xavion AI supports several internal commands to manage the session:
+## Command Interface (CLI)
+
+Xavion AI supports several internal commands in the terminal:
 
 | Command | Action |
 | :--- | :--- |
@@ -104,4 +119,5 @@ Xavion AI supports several internal commands to manage the session:
 
 - **Connection Refused**: Verify that `ollama serve` is running in your terminal or as a background service.
 - **Model Not Found**: Ensure you have pulled the model specified in the configuration (default: `llama3.1`).
-- **ANSI Color Issues**: Ensure your terminal emulator supports 24-bit color (TrueColor). Modern versions of iTerm2, Windows Terminal, and VS Code Terminal are recommended.
+- **Web Interface Not Loading**: Check if the port (default 8000) is already in use by another application.
+- **ANSI Color Issues (CLI)**: Ensure your terminal emulator supports 24-bit color (TrueColor).
