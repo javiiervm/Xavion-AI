@@ -194,12 +194,33 @@ async def text_to_speech(text: str, voice: str = "en-US-AvaMultilingualNeural"):
         communicate = edge_tts.Communicate(text, voice)
         
         async def audio_generator():
-            async for chunk in communicate.stream():
-                if chunk["type"] == "audio":
-                    yield chunk["data"]
+            try:
+                async for chunk in communicate.stream():
+                    if chunk["type"] == "audio":
+                        yield chunk["data"]
+            except Exception as e:
+                print(f"TTS Streaming Error: {e}")
+                return
         
         return StreamingResponse(audio_generator(), media_type="audio/mpeg")
     except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/tts_binary")
+async def text_to_speech_binary(text: str, voice: str = "en-US-AvaMultilingualNeural"):
+    if not text:
+        raise HTTPException(status_code=400, detail="Text is required")
+    
+    try:
+        communicate = edge_tts.Communicate(text, voice)
+        audio_data = b""
+        async for chunk in communicate.stream():
+            if chunk["type"] == "audio":
+                audio_data += chunk["data"]
+        
+        return Response(content=audio_data, media_type="audio/mpeg")
+    except Exception as e:
+        print(f"TTS Binary Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 def start_server(port=8000):

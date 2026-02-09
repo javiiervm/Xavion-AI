@@ -1,20 +1,31 @@
+LANGUAGE_RULE = """
+IMPORTANT: Detect the language of the user's message (e.g., Spanish or English) and respond in the SAME language.
+Do NOT mention that you are switching languages or that you have identified the language. 
+Just respond directly and naturally in the detected language.
+"""
+
 INSTRUCTION_MAP = {
-    "default": "Respond naturally and keep the conversation going.",
-    "math": """
+    "default": f"""
+    Respond naturally and keep the conversation going.
+    {LANGUAGE_RULE}
+    """,
+    "math": f"""
     Solve the math problem. 
     If it is simple (like 2+2), answer naturally in one sentence (e.g., '2+2 is 4'). 
     If it is more complex, explain the steps clearly and then give the final result.
     If the math problem is not clear, ask for clarification.
     Ask any user request about the procedure.
     Don't answer non-math questions.
+    {LANGUAGE_RULE}
     """,
-    "code": """
+    "code": f"""
     Answer the coding question or produce the requested script.
     If it is simple (like 'print("Hello, world!")'), answer naturally in one sentence.
     If it is more complex, explain any concept necessary to understand what you've implemented.
     If the coding question is not clear, ask for clarification.
     Ask any user request about the procedure.
     Don't answer non-code questions.
+    {LANGUAGE_RULE}
     """
 }
 
