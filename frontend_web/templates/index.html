@@ -614,7 +614,16 @@
         // 3. Generar y reproducir audio
         if (fullResponse) {
           console.log("Xavion responde:", fullResponse);
-          aiAudio.src = `/tts?text=${encodeURIComponent(fullResponse)}`;
+          
+          // Limpiar markdown para que la voz no intente leer asteriscos, etc.
+          const cleanText = fullResponse
+            .replace(/\*\*/g, "")
+            .replace(/\*/g, "")
+            .replace(/#/g, "")
+            .replace(/`/g, "")
+            .trim();
+
+          aiAudio.src = `/tts?text=${encodeURIComponent(cleanText)}`;
           
           aiAudio.onplay = () => {
             document.querySelector('.logo-pulse').style.animationDuration = '1s';

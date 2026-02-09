@@ -186,7 +186,7 @@ async def chat_endpoint(request: ChatRequest):
     return StreamingResponse(generate(), media_type="text/event-stream")
 
 @app.get("/tts")
-async def text_to_speech(text: str, voice: str = "es-ES-AlvaroNeural"):
+async def text_to_speech(text: str, voice: str = "en-US-AvaMultilingualNeural"):
     if not text:
         raise HTTPException(status_code=400, detail="Text is required")
     
