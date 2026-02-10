@@ -312,6 +312,7 @@
     let conversationHistory = "";
     let chatStarted = false;
     let currentConversationId = null;
+    let isOnline = navigator.onLine;
 
     const chatForm = document.getElementById('chat-form');
     const messageInput = document.getElementById('message-input');
@@ -330,14 +331,42 @@
 
     function updateButtonState(input, btnId) {
       const btn = document.getElementById(btnId);
+      const micBtn = btn.previousElementSibling; // The mic-btn is always before the main-action-btn
+      
+      // Hide mic button if offline
+      if (micBtn && micBtn.classList.contains('mic-btn-liquid')) {
+        micBtn.style.display = isOnline ? 'flex' : 'none';
+      }
+
       if (input.value.trim().length > 0) {
         btn.innerHTML = sendIcon;
         btn.dataset.mode = 'send';
+        btn.style.display = 'flex';
       } else {
-        btn.innerHTML = voiceIcon;
-        btn.dataset.mode = 'voice';
+        if (isOnline) {
+          btn.innerHTML = voiceIcon;
+          btn.dataset.mode = 'voice';
+          btn.style.display = 'flex';
+        } else {
+          btn.style.display = 'none'; // Hide voice button if offline and no text
+        }
       }
     }
+
+    // Connectivity Listeners
+    window.addEventListener('online', () => {
+      isOnline = true;
+      updateButtonState(messageInput, 'main-action-btn');
+      updateButtonState(messageInputWelcome, 'main-action-btn-welcome');
+    });
+
+    window.addEventListener('offline', () => {
+      isOnline = false;
+      if (isVoiceMode) toggleVoiceMode(false);
+      if (activeDictation) { activeDictation.stop(); activeDictation = null; }
+      updateButtonState(messageInput, 'main-action-btn');
+      updateButtonState(messageInputWelcome, 'main-action-btn-welcome');
+    });
 
     // Voice Mode
     const voiceOverlay = document.getElementById('voice-overlay');
@@ -403,6 +432,9 @@
       try {
         if (!micStream) {
           micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          // Apply current mute state
+          micStream.getAudioTracks().forEach(track => track.enabled = !isVoiceMuted);
+
           const micSource = audioCtx.createMediaStreamSource(micStream);
           micAnalyser = audioCtx.createAnalyser();
           micAnalyser.fftSize = 32;
@@ -438,15 +470,34 @@
       voiceRecognition.onresult = async (e) => {
         const text = e.results[0][0].transcript;
         if (text.trim() && !isVoiceMuted) await processVoiceInteraction(text);
-        else if (isVoiceMode) voiceRecognition.start();
+        else if (isVoiceMode && !isVoiceMuted) voiceRecognition.start();
       };
-      voiceRecognition.onend = () => { if (isVoiceMode && !aiAudio.playing) voiceRecognition.start(); };
-      voiceRecognition.onerror = (e) => { if(isVoiceMode && !aiAudio.playing) setTimeout(() => voiceRecognition.start(), 1000); };
-      voiceRecognition.start();
+      voiceRecognition.onend = () => { 
+        if (isVoiceMode && !aiAudio.playing && !isVoiceMuted) {
+          try { voiceRecognition.start(); } catch(e) {}
+        }
+      };
+      voiceRecognition.onerror = (e) => { 
+        if (isVoiceMode && !aiAudio.playing && !isVoiceMuted) {
+          setTimeout(() => {
+            try { if (isVoiceMode && !isVoiceMuted) voiceRecognition.start(); } catch(ex) {}
+          }, 1000);
+        }
+      };
+      if (!isVoiceMuted) voiceRecognition.start();
     }
 
     function stopVoiceConversation() {
-      if (voiceRecognition) { voiceRecognition.stop(); voiceRecognition = null; }
+      if (voiceRecognition) { 
+        voiceRecognition.onend = null;
+        voiceRecognition.onerror = null;
+        voiceRecognition.stop(); 
+        voiceRecognition = null; 
+      }
+      if (micStream) {
+        micStream.getTracks().forEach(track => track.stop());
+        micStream = null;
+      }
       aiAudio.pause(); aiAudio.src = ""; audioQueue = []; isPlayingAudio = false;
     }
 
@@ -492,6 +543,20 @@
       isVoiceMuted = !isVoiceMuted;
       muteVoiceBtn.querySelector('#mute-icon').innerHTML = isVoiceMuted ? '<path d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" stroke-width="2"/>' : '<path d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" stroke-width="2"/>';
       muteVoiceBtn.classList.toggle('bg-red-500/20', isVoiceMuted);
+      
+      // Real mute: Disable mic tracks
+      if (micStream) {
+        micStream.getAudioTracks().forEach(track => track.enabled = !isVoiceMuted);
+      }
+      
+      // Stop/Start recognition
+      if (isVoiceMuted) {
+        if (voiceRecognition) voiceRecognition.stop();
+      } else {
+        if (isVoiceMode && !aiAudio.playing) {
+          try { voiceRecognition.start(); } catch(e) {}
+        }
+      }
     });
 
     // Chat History & Messages
@@ -555,6 +620,7 @@
 
     async function sendMessage(text) {
       if (!text) return;
+      if (activeDictation) { activeDictation.stop(); activeDictation = null; }
       if (!chatStarted) { chatStarted = true; welcomeContainer.classList.add('hidden'); chatContainer.classList.remove('hidden'); inputArea.classList.remove('hidden'); }
       addMessage('user', text); messageInput.value = ''; messageInputWelcome.value = '';
       updateButtonState(messageInput, 'main-action-btn');
@@ -595,22 +661,35 @@
       messagesContainer.appendChild(div); chatContainer.scrollTop = chatContainer.scrollHeight; return div;
     }
 
+    let activeDictation = null;
     function startDictation(inputId, btnId) {
+        if (activeDictation) {
+            activeDictation.stop();
+            activeDictation = null;
+            return;
+        }
         const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!Recognition) { alert("Tu navegador no soporta dictado de voz."); return; }
-        const recognition = new Recognition();
-        recognition.lang = 'es-ES';
+        activeDictation = new Recognition();
+        activeDictation.lang = 'es-ES';
         const input = document.getElementById(inputId);
         const micBtn = document.getElementById(btnId);
         
-        recognition.onstart = () => { micBtn.classList.add('mic-active'); };
-        recognition.onresult = (e) => {
+        activeDictation.onstart = () => { micBtn.classList.add('mic-active'); };
+        activeDictation.onresult = (e) => {
             const transcript = e.results[0][0].transcript;
             input.value += (input.value ? ' ' : '') + transcript;
             input.dispatchEvent(new Event('input'));
         };
-        recognition.onend = () => { micBtn.classList.remove('mic-active'); };
-        recognition.start();
+        activeDictation.onend = () => { 
+            micBtn.classList.remove('mic-active'); 
+            activeDictation = null;
+        };
+        activeDictation.onerror = () => {
+            micBtn.classList.remove('mic-active');
+            activeDictation = null;
+        };
+        activeDictation.start();
     }
 
     document.getElementById('mic-btn').addEventListener('click', () => startDictation('message-input', 'mic-btn'));
