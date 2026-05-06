@@ -4,32 +4,30 @@ import os
 from xavion.core.engine import XavionAI
 from xavion.interfaces.cli import ui
 
-def select_session(ai: XavionAI):
-    """Allows user to select a previous session or start a new one."""
-    sessions = ai.list_sessions()
+def open_session_menu(ai: XavionAI):
+    """Command-based session selector."""
+    sessions = ai.list_sessions_detailed()
     if not sessions:
-        return None
+        ui.print_info("No previous conversations found.")
+        return False
 
-    ui.print_info("Found existing conversations:")
-    for i, session in enumerate(sessions):
-        print(f"  [{i+1}] {session}")
-    print("  [0] Start a new conversation")
+    ui.print_session_selector(sessions)
     
     try:
-        choice = input("\n▶ Selection: ").strip()
-        if choice == "0" or not choice:
-            return None
+        choice = input("\n▶ Select ID (or 'c' to cancel): ").strip().lower()
+        if choice == 'c':
+            return False
         
         idx = int(choice) - 1
         if 0 <= idx < len(sessions):
-            session_id = sessions[idx]
+            session_id = sessions[idx]["id"]
             if ai.load_session(session_id):
-                ui.print_success(f"Retrieved session: {session_id}")
-                return session_id
-    except ValueError:
-        pass
+                ui.print_success(f"Loaded: {sessions[idx]['title']}")
+                return True
+    except (ValueError, IndexError):
+        ui.print_error("Invalid selection.")
     
-    return None
+    return False
 
 def handle_command(cmd_input: str, ai: XavionAI, current_mode: str, debug: bool):
     """
@@ -45,9 +43,14 @@ def handle_command(cmd_input: str, ai: XavionAI, current_mode: str, debug: bool)
     
     if cmd == "/help":
         ui.print_help_panel()
+    elif cmd == "/new":
+        new_id = ai.start_new_session()
+        ui.print_success(f"Started new session: {new_id}")
+    elif cmd == "/sessions":
+        open_session_menu(ai)
     elif cmd == "/reset":
         ai.reset_history()
-        ui.print_success("Conversation history has been reset.")
+        ui.print_success("Conversation history has been cleared for this session.")
     elif cmd == "/debug":
         debug = not debug
         ai.debug_callback = ui.print_debug if debug else None
@@ -58,7 +61,7 @@ def handle_command(cmd_input: str, ai: XavionAI, current_mode: str, debug: bool)
         if models:
             ui.print_mode_list(models)
         else:
-            ui.print_error("No models found or Ollama is unreachable.")
+            ui.print_error("No models found.")
     elif cmd == "/model":
         if len(cmd_parts) > 1:
             new_model = cmd_parts[1].strip()
@@ -66,16 +69,13 @@ def handle_command(cmd_input: str, ai: XavionAI, current_mode: str, debug: bool)
             ui.print_success(f"Model switched to: {new_model}")
         else:
             ui.print_info(f"Current model: {ai.model_name}")
-            ui.print_info("Use '/model:NAME' to switch.")
     elif cmd == "/mode":
         ui.print_mode_list(["auto", "default", "math", "code"])
     elif cmd.startswith("/mode:"):
         new_mode = cmd_input.split(":")[1].strip()
         if new_mode in ["auto", "default", "math", "code"]:
-            ui.print_success(f"Response mode switched to: {new_mode}")
+            ui.print_success(f"Mode switched to: {new_mode}")
             return new_mode, debug, False
-        else:
-            ui.print_error(f"Invalid mode: {new_mode}")
     else:
         ui.print_error(f"Unknown command: {cmd}")
         
@@ -85,37 +85,30 @@ def run_cli(debug: bool = False):
     """
     Main loop for the Professional CLI interface.
     """
-    # Initialize engine
     ai = XavionAI(debug_callback=ui.print_debug if debug else None)
     
-    # Initial setup
     ui.clear_terminal()
     ui.print_logo()
     ui.print_welcome_banner()
     
-    # Session management
-    current_session = select_session(ai)
-    if not current_session:
-        # Create a new session ID based on timestamp
-        current_session = time.strftime("chat_%Y%m%d_%H%M%S")
-        ai.current_session_id = current_session
+    # Start a fresh session by default
+    current_session = ai.start_new_session()
 
-    ui.print_info(f"System ready (Session: {current_session}). Type '/help' for options.")
+    ui.print_info(f"System ready. Started new session: {current_session}")
+    ui.print_info("Type '/sessions' to load previous chats or '/help' for more.")
     print()
 
     intent_mode = "auto"
 
     while True:
         try:
-            # UI: Status and Input
-            ui.print_status_bar(intent_mode, debug)
+            ui.print_status_bar(intent_mode, debug, ai.current_session_id)
             user_input = ui.get_user_input().strip()
-            print() # Visual spacing
+            print() 
 
             if not user_input:
                 continue
 
-            # 1. Handle Commands
             if user_input.startswith("/"):
                 intent_mode, debug, should_exit = handle_command(user_input, ai, intent_mode, debug)
                 if should_exit:
@@ -123,18 +116,15 @@ def run_cli(debug: bool = False):
                 print()
                 continue
 
-            # 2. Process AI Response
             ui.print_ai_header()
-            
             try:
-                # Use engine streaming
                 for token in ai.chat_stream(user_input, intent_mode=intent_mode):
                     print(f"\033[1m{token}\033[0m", end="", flush=True)
             except Exception as e:
                 print()
                 ui.print_error(f"{e}")
             
-            print("\n") # End of AI message
+            print("\n")
 
         except KeyboardInterrupt:
             ui.print_goodbye()

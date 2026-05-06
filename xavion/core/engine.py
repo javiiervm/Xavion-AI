@@ -1,5 +1,6 @@
 import json
 import os
+import time
 from typing import Generator, List, Optional, Dict, Any, Callable
 from langchain_ollama import OllamaLLM
 from langchain_core.prompts import ChatPromptTemplate
@@ -37,7 +38,6 @@ class XavionAI:
         )
 
     def list_available_models(self) -> List[str]:
-        """Queries the local Ollama API for available models."""
         try:
             response = requests.get("http://localhost:11434/api/tags", timeout=2)
             if response.status_code == 200:
@@ -78,7 +78,6 @@ class XavionAI:
         return prompt, params, intent
 
     def chat_stream(self, message: str, intent_mode: str = "auto") -> Generator[str, None, None]:
-        """Processes a message and yields tokens as they are generated."""
         prompt, params, _ = self._prepare_chain(message, intent_mode)
         model = self._get_model()
         chain = prompt | model
@@ -94,29 +93,43 @@ class XavionAI:
                 error_msg = f"\n[!] Model '{self.model_name}' not found.\n"
                 if available:
                     error_msg += f"Available models: {', '.join(available)}\n"
-                    error_msg += f"Try switching with '/model:NAME' or pulling it with 'ollama pull {self.model_name}'"
                 else:
-                    error_msg += f"No models found in Ollama. Run 'ollama pull {self.model_name}' in your terminal."
+                    error_msg += f"No models found. Pull one with 'ollama pull {self.model_name}'"
                 raise Exception(error_msg)
             raise e
             
         self.history.append({"user": message, "assistant": full_response})
         
-        # Auto-save after each message if session is active
         if self.current_session_id:
             self.save_session(self.current_session_id)
 
     def reset_history(self):
         self.history = []
-        self.current_session_id = None
+        # We don't clear session_id here to allow re-starting a fresh chat in the same "slot" 
+        # but usually we want a new session_id for a new chat.
+
+    def start_new_session(self):
+        self.reset_history()
+        self.current_session_id = time.strftime("chat_%Y%m%d_%H%M%S")
+        return self.current_session_id
 
     def save_session(self, session_id: str):
-        """Saves history to a JSON file in data/ directory."""
         if not os.path.exists("data"):
             os.makedirs("data")
         
         filepath = os.path.join("data", f"{session_id}.json")
+        
+        # Determine a title from first message
+        title = "New Conversation"
+        if self.history:
+            first_msg = self.history[0]["user"]
+            title = first_msg[:40] + "..." if len(first_msg) > 40 else first_msg
+
         data = {
+            "id": session_id,
+            "title": title,
+            "timestamp": os.path.getmtime(filepath) if os.path.exists(filepath) else time.time(),
+            "last_updated": time.time(),
             "model": self.model_name,
             "history": self.history
         }
@@ -125,7 +138,6 @@ class XavionAI:
         self.current_session_id = session_id
 
     def load_session(self, session_id: str):
-        """Loads history from a JSON file in data/ directory."""
         filepath = os.path.join("data", f"{session_id}.json")
         if os.path.exists(filepath):
             with open(filepath, "r", encoding="utf-8") as f:
@@ -136,8 +148,23 @@ class XavionAI:
                 return True
         return False
 
-    def list_sessions(self) -> List[str]:
-        """Lists all saved session IDs."""
+    def list_sessions_detailed(self) -> List[Dict[str, Any]]:
+        """Lists sessions with metadata, ordered by last_updated descending."""
         if not os.path.exists("data"):
             return []
-        return [f.replace(".json", "") for f in os.listdir("data") if f.endswith(".json")]
+        
+        sessions = []
+        for filename in os.listdir("data"):
+            if filename.endswith(".json"):
+                try:
+                    with open(os.path.join("data", filename), "r", encoding="utf-8") as f:
+                        data = json.load(f)
+                        sessions.append({
+                            "id": data.get("id", filename.replace(".json", "")),
+                            "title": data.get("title", "Untitled"),
+                            "last_updated": data.get("last_updated", 0)
+                        })
+                except Exception:
+                    continue
+        
+        return sorted(sessions, key=lambda x: x["last_updated"], reverse=True)
