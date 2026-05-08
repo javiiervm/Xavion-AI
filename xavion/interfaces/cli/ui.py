@@ -26,7 +26,7 @@ __  __           _                  _    ___
 /_/\_\__,_| \_/ |_|\___/|_| |_| /_/   \_\___|
     """
     console.print(Text(banner_text, style="bold bright_yellow"))
-    console.print("[bold cyan]Professional Modular AI Assistant[/bold cyan]\n")
+    #console.print("[bold cyan]Professional Modular AI Assistant[/bold cyan]\n")
 
 def print_logo(image_path: str = "assets/logo.png", width: int = 50):
     if not os.path.exists(image_path):
@@ -50,21 +50,25 @@ def print_logo(image_path: str = "assets/logo.png", width: int = 50):
 def print_status_bar(mode: str, debug: bool, session_id: str):
     cwd = os.getcwd().replace(os.path.expanduser("~"), "~")
     
-    path_text = Text(f" 📂 {cwd} ", style="bold blue on black")
-    mode_text = Text(f" 🤖 Mode: {mode.upper()} ", style="bold black on yellow")
-    session_text = Text(f" 💬 Session: {session_id} ", style="bold white on blue")
+    #path_text = Text(f" 📂 {cwd} ", style="bold blue on black")
+    path_text = Text(f"{cwd} ", style="bold blue on black")
+    #mode_text = Text(f" 🤖 Mode: {mode.upper()} ", style="bold black on yellow")
+    mode_text = Text(f" Mode: {mode.upper()} ", style="bold black on yellow")
+    #session_text = Text(f" 💬 Session: {session_id} ", style="bold white on blue")
+    #session_text = Text(f"Session: {session_id} ", style="bold white on blue")
     
     debug_style = "bold white on green" if debug else "bold white on red"
     debug_status = "ON" if debug else "OFF"
-    debug_text = Text(f" 🛠 Debug: {debug_status} ", style=debug_style)
+    #debug_text = Text(f" 🛠 Debug: {debug_status} ", style=debug_style)
+    debug_text = Text(f" Debug: {debug_status} ", style=debug_style)
 
     combined = Text()
     combined.append_text(path_text)
     combined.append(" ")
     combined.append_text(mode_text)
     combined.append(" ")
-    combined.append_text(session_text)
-    combined.append(" ")
+    #combined.append_text(session_text)
+    #combined.append(" ")
     combined.append_text(debug_text)
     
     console.print(combined)
@@ -82,7 +86,8 @@ def print_session_selector(sessions: List[Dict[str, Any]]):
     console.print(table)
 
 def print_ai_header():
-    console.print("[bold blue]▶ Xavion AI:[/bold blue] ", end="")
+    #console.print("[bold blue]▶ Xavion AI:[/bold blue] ", end="")
+    pass
 
 def print_info(message: str):
     console.print(f"[yellow]ℹ[/yellow] [dim white]{message}[/dim white]")
@@ -122,5 +127,6 @@ def print_goodbye():
     console.print("\n[bold yellow]Xavion AI is now offline. Goodbye![/bold yellow]\n")
 
 def get_user_input() -> str:
-    console.print("[bold blue]▶ You:[/bold blue] ", end="")
+    #console.print("[bold blue]▶ You:[/bold blue] ", end="")
+    console.print("[bold blue]▶[/bold blue] ", end="")
     return input()

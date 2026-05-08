@@ -88,13 +88,13 @@ def run_cli(debug: bool = False):
     ai = XavionAI(debug_callback=ui.print_debug if debug else None)
     
     ui.clear_terminal()
-    ui.print_logo()
+    #ui.print_logo()
     ui.print_welcome_banner()
     
     # Start a fresh session by default
     current_session = ai.start_new_session()
 
-    ui.print_info(f"System ready. Started new session: {current_session}")
+    #ui.print_info(f"System ready. Started new session: {current_session}")
     ui.print_info("Type '/sessions' to load previous chats or '/help' for more.")
     print()
 
