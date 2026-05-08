@@ -7,3 +7,4 @@ Pillow
 fastapi
 uvicorn
 jinja2
+prompt-toolkit>=3.0.0

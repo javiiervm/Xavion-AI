@@ -8,8 +8,13 @@ from rich.panel import Panel
 from rich.table import Table
 from rich import box
 from PIL import Image
+from prompt_toolkit import PromptSession
+from prompt_toolkit.formatted_text import HTML
 
 console = Console()
+
+# Global session to maintain history across inputs
+prompt_session = PromptSession()
 
 def detect_terminal_clear():
     return "cls" if platform.system() == "Windows" else "clear"
@@ -127,6 +132,10 @@ def print_goodbye():
     console.print("\n[bold yellow]Xavion AI is now offline. Goodbye![/bold yellow]\n")
 
 def get_user_input() -> str:
-    #console.print("[bold blue]▶ You:[/bold blue] ", end="")
-    console.print("[bold blue]▶[/bold blue] ", end="")
-    return input()
+    try:
+        # Using prompt_toolkit for advanced input features (cursor navigation, history, etc.)
+        return prompt_session.prompt(HTML('<ansiblue><b>▶</b></ansiblue> '))
+    except EOFError:
+        return "/exit"
+    except KeyboardInterrupt:
+        return "" # Clear line and keep going
