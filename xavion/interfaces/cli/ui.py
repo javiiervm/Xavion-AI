@@ -1,141 +1,200 @@
 import os
-import platform
+import sys
 import time
-from typing import List, Optional, Dict, Any
-from rich.console import Console
-from rich.text import Text
-from rich.panel import Panel
-from rich.table import Table
-from rich import box
-from PIL import Image
+import shutil
 from prompt_toolkit import PromptSession
+from prompt_toolkit.styles import Style
+from prompt_toolkit.patch_stdout import patch_stdout
 from prompt_toolkit.formatted_text import HTML
+from rich.console import Console
+from rich.markdown import Markdown
+from rich.live import Live
 
-console = Console()
+class XavionCLI:
+    def __init__(self, ai, debug=False):
+        self.ai = ai
+        self.debug_mode = debug
+        self.intent_mode = "auto"
+        self.console = Console()
+        
+        # 1. Hacemos la barra inferior transparente (bg:default noreverse)
+        self.style = Style.from_dict({
+            'bottom-toolbar': 'noreverse bg:default #6272a4',
+        })
+        
+        self.session = PromptSession(style=self.style)
 
-# Global session to maintain history across inputs
-prompt_session = PromptSession()
+    def get_bottom_toolbar(self):
+        cwd = os.getcwd().replace(os.path.expanduser("~"), "~")
+        session_id = self.ai.current_session_id or "new"
+        model = self.ai.model_name
+        debug_str = " [debug]" if self.debug_mode else ""
+        # Calculamos el ancho del terminal para dibujar la tapa inferior del recuadro
+        width = shutil.get_terminal_size().columns
+        box_width = max(0, width - 2)
+        bottom_line = '\u2570' + '\u2500' * box_width + '\u256f'  # ╰─╯
+        info = f" workspace ({cwd})   session ({session_id})   /mode ({self.intent_mode})   /model ({model}){debug_str} "
+        # Usamos HTML para que el borde inferior tenga el mismo color que el resto del recuadro
+        return HTML(
+            f'<style color="#44475a">{bottom_line}</style>\n'
+            f'<style color="#6272a4">{info}</style>'
+        )
 
-def detect_terminal_clear():
-    return "cls" if platform.system() == "Windows" else "clear"
+    def print_banner(self):
+        banner = (
+            "[bold #bd93f9]\n"
+            "__  __           _                  _    ___ \n"
+            "\\ \\/ /__ ___   _(_) ___  _ __      / \\  |_ _|\n"
+            " \\  // _` \\ \\ / / |/ _ \\| '_ \\    / _ \\  | | \n"
+            " /  \\ (_| |\\ V /| | (_) | | | |  / ___ \\ | | \n"
+            "/_/\\_\\__,_| \\_/ |_|\\___/|_| |_| /_/   \\_\\___|"
+            "[/]"
+        )
+        self.console.print(banner)
+        self.console.print("[dim #6272a4]i[/] type [bold #f8f8f2]/help[/] for commands or start chatting.\n")
 
-def clear_terminal():
-    os.system(detect_terminal_clear())
+    def show_debug(self, message: str, icon: str = "🔍"):
+        self.console.print(f"[dim #6272a4]_{icon} {message}_[/]")
 
-def print_welcome_banner():
-    banner_text = """
-__  __           _                  _    ___ 
-\ \/ /__ ___   _(_) ___  _ __      / \  |_ _|
- \  // _` \ \ / / |/ _ \| '_ \    / _ \  | | 
- /  \ (_| |\ V /| | (_) | | | |  / ___ \ | | 
-/_/\_\__,_| \_/ |_|\___/|_| |_| /_/   \_\___|
-    """
-    console.print(Text(banner_text, style="bold bright_yellow"))
-    #console.print("[bold cyan]Professional Modular AI Assistant[/bold cyan]\n")
+    def run(self):
+        self.print_banner()
+        self.ai.start_new_session()
+        
+        if self.debug_mode:
+            self.ai.debug_callback = self.show_debug
 
-def print_logo(image_path: str = "assets/logo.png", width: int = 50):
-    if not os.path.exists(image_path):
-        return
-    try:
-        img = Image.open(image_path).convert('RGB')
-        aspect_ratio = img.height / img.width
-        height = int(width * aspect_ratio * 0.5)
-        img = img.resize((width, height), Image.Resampling.LANCZOS)
-        pixels = img.load()
-        for y in range(height):
-            line = Text()
-            for x in range(width):
-                r, g, b = pixels[x, y]
-                line.append("█", style=f"rgb({r},{g},{b})")
-            console.print(line)
-        console.print()
-    except Exception:
-        pass
+        while True:
+            try:
+                # Calculamos dinámicamente el ancho de tu terminal
+                width = shutil.get_terminal_size().columns
+                box_width = max(0, width - 2)
+                
+                # Preparamos las tapas del recuadro
+                top_line = '╭' + '─' * box_width + '╮'
+                bottom_line = '╰' + '─' * box_width + '╯'
+                
+                # Dibujamos la tapa superior
+                self.console.print(f"[#44475a]{top_line}[/]")
+                
+                with patch_stdout():
+                    # El prompt dibuja los laterales (│) y el interior
+                    # La tapa inferior (╰─╯) se muestra en el toolbar en tiempo real
+                    user_text = self.session.prompt(
+                        HTML('<style color="#44475a">│</style> <style color="#bd93f9">></style> '),
+                        prompt_continuation=lambda w, l, wrap: HTML('<style color="#44475a">│</style>   '),
+                        rprompt=HTML('<style color="#44475a">│</style>'),
+                        placeholder=HTML('<style color="#6272a4">Type your message or /help...</style>'),
+                        bottom_toolbar=self.get_bottom_toolbar,
+                    ).strip()
+                
+                # Imprimimos la tapa inferior con Rich para que el recuadro quede completo tras enviar
+                self.console.print(f"[#44475a]{bottom_line}[/]")
 
-def print_status_bar(mode: str, debug: bool, session_id: str):
-    cwd = os.getcwd().replace(os.path.expanduser("~"), "~")
-    
-    #path_text = Text(f" 📂 {cwd} ", style="bold blue on black")
-    path_text = Text(f"{cwd} ", style="bold blue on black")
-    #mode_text = Text(f" 🤖 Mode: {mode.upper()} ", style="bold black on yellow")
-    mode_text = Text(f" Mode: {mode.upper()} ", style="bold black on yellow")
-    #session_text = Text(f" 💬 Session: {session_id} ", style="bold white on blue")
-    #session_text = Text(f"Session: {session_id} ", style="bold white on blue")
-    
-    debug_style = "bold white on green" if debug else "bold white on red"
-    debug_status = "ON" if debug else "OFF"
-    #debug_text = Text(f" 🛠 Debug: {debug_status} ", style=debug_style)
-    debug_text = Text(f" Debug: {debug_status} ", style=debug_style)
+                if not user_text:
+                    continue
+                    
+                if user_text.startswith("/"):
+                    self.handle_command(user_text)
+                else:
+                    self.generate_response(user_text)
+                    
+            except KeyboardInterrupt:
+                continue  
+            except EOFError:
+                break     
+                
+        self.console.print("[bold #bd93f9]Goodbye![/]")
 
-    combined = Text()
-    combined.append_text(path_text)
-    combined.append(" ")
-    combined.append_text(mode_text)
-    combined.append(" ")
-    #combined.append_text(session_text)
-    #combined.append(" ")
-    combined.append_text(debug_text)
-    
-    console.print(combined)
+    def generate_response(self, user_text: str):
+        self.console.print()
+        self.console.print("[bold #bd93f9]✦ Xavion[/]")
+        
+        full_response = ""
+        try:
+            with Live(Markdown("..."), console=self.console, refresh_per_second=15, transient=False) as live:
+                for token in self.ai.chat_stream(user_text, intent_mode=self.intent_mode):
+                    full_response += token
+                    live.update(Markdown(full_response))
+        except Exception as e:
+            self.console.print(f"[bold red]**Error:**[/] {str(e)}")
+        
+        self.console.print()
 
-def print_session_selector(sessions: List[Dict[str, Any]]):
-    table = Table(title="Previous Conversations", box=box.ROUNDED, border_style="blue", show_header=True)
-    table.add_column("ID", style="cyan", justify="right")
-    table.add_column("Title", style="white")
-    table.add_column("Last Updated", style="dim")
+    def handle_command(self, cmd_input: str):
+        cmd_parts = cmd_input.lower().strip().split(":")
+        cmd = cmd_parts[0]
+        
+        if cmd in ["/exit", "/quit"]:
+            raise EOFError
+        elif cmd == "/help":
+            help_text = """
+**Session Control:**
+- `/new`           - Start a completely new conversation
+- `/reset`         - Clear history for current session
 
-    for i, s in enumerate(sessions):
-        updated_str = time.strftime("%Y-%m-%d %H:%M", time.localtime(s['last_updated']))
-        table.add_row(str(i+1), s['title'], updated_str)
+**Core Commands:**
+- `/exit`          - Close the application
+- `/help`          - Show this guide
 
-    console.print(table)
+**Settings:**
+- `/debug`         - Toggle debug mode
+- `/models`        - List installed models
+- `/model:<name>`  - Switch model
+- `/mode:<name>`   - Switch mode (auto, math, code, default)
+"""
+            self.console.print(Markdown(help_text))
+        elif cmd == "/new":
+            new_id = self.ai.start_new_session()
+            self.console.print(f"[dim #6272a4]i[/] Started new session: {new_id}")
+        elif cmd == "/reset":
+            self.ai.reset_history()
+            self.console.print("[dim #6272a4]i[/] Conversation history has been cleared for this session.")
+        elif cmd == "/debug":
+            self.debug_mode = not self.debug_mode
+            self.ai.debug_callback = self.show_debug if self.debug_mode else None
+            status = "enabled" if self.debug_mode else "disabled"
+            self.console.print(f"[dim #6272a4]i[/] Debug mode {status}.")
+        elif cmd == "/models":
+            models = self.ai.list_available_models()
+            if models:
+                self.console.print(f"[dim #6272a4]i[/] Available models: {', '.join(models)}")
+            else:
+                self.console.print("[dim #6272a4]i[/] No models found.")
+        elif cmd == "/model":
+            if len(cmd_parts) > 1:
+                new_model = cmd_parts[1].strip()
+                self.ai.model_name = new_model
+                self.console.print(f"[dim #6272a4]i[/] Model switched to: {new_model}")
+            else:
+                self.console.print(f"[dim #6272a4]i[/] Current model: {self.ai.model_name}")
+        elif cmd == "/mode":
+            self.console.print("[dim #6272a4]i[/] Available modes: auto, default, math, code")
+        elif cmd.startswith("/mode:"):
+            new_mode = cmd_input.split(":")[1].strip()
+            if new_mode in ["auto", "default", "math", "code"]:
+                self.intent_mode = new_mode
+                self.console.print(f"[dim #6272a4]i[/] Mode switched to: {new_mode}")
+        elif cmd == "/sessions":
+            sessions = self.ai.list_sessions_detailed()
+            if not sessions:
+                self.console.print("[dim #6272a4]i[/] No previous conversations found.")
+            else:
+                msg = "**Previous Conversations:**\n"
+                for i, s in enumerate(sessions):
+                    updated_str = time.strftime("%Y-%m-%d %H:%M", time.localtime(s['last_updated']))
+                    msg += f"{i+1}. `{s['id']}` - {s['title']} ({updated_str})\n"
+                msg += "\n*Use `/load:<id>` to load a session.*"
+                self.console.print(Markdown(msg))
+        elif cmd.startswith("/load:"):
+            target_id = cmd_input.split(":")[1].strip()
+            if self.ai.load_session(target_id):
+                self.console.print(f"[dim #6272a4]i[/] Loaded session: {target_id}")
+            else:
+                self.console.print(f"[bold red]![/] Failed to load session: {target_id}")
+        else:
+            self.console.print(f"[bold red]![/] Unknown command: {cmd}")
+        self.console.print()
 
-def print_ai_header():
-    #console.print("[bold blue]▶ Xavion AI:[/bold blue] ", end="")
-    pass
-
-def print_info(message: str):
-    console.print(f"[yellow]ℹ[/yellow] [dim white]{message}[/dim white]")
-
-def print_success(message: str):
-    console.print(f"[green]✔[/green] [bold yellow]{message}[/bold yellow]")
-
-def print_error(message: str):
-    console.print(f"[red]✘[/red] [bold red]{message}[/bold red]")
-
-def print_debug(message: str, icon: str = "🔍"):
-    console.print(f"   [dim yellow]{icon} {message}[/dim yellow]")
-
-def print_help_panel():
-    help_content = """
-[bold yellow]Session Control:[/bold yellow]
-  [cyan]/new[/cyan]           - Start a completely new conversation
-  [cyan]/sessions[/cyan]      - Open session manager (Resume previous chats)
-  [cyan]/reset[/cyan]         - Clear history for current session
-
-[bold yellow]Core Commands:[/bold yellow]
-  [cyan]/exit[/cyan]          - Close the application
-  [cyan]/help[/cyan]          - Show this guide
-
-[bold yellow]Settings:[/bold yellow]
-  [cyan]/debug[/cyan]         - Toggle debug mode
-  [cyan]/models[/cyan]        - List installed models
-  [cyan]/model:<name>[/cyan]  - Switch model
-  [cyan]/mode:<name>[/cyan]   - Switch mode (auto, math, code, default)
-    """
-    console.print(Panel(help_content.strip(), title="[bold white]Command Registry[/bold white]", border_style="blue", box=box.ROUNDED))
-
-def print_mode_list(modes: List[str]):
-    console.print(Panel("\n".join([f" • [bold cyan]{m}[/bold cyan]" for m in modes]), title="[bold yellow]Options[/bold yellow]", border_style="yellow"))
-
-def print_goodbye():
-    console.print("\n[bold yellow]Xavion AI is now offline. Goodbye![/bold yellow]\n")
-
-def get_user_input() -> str:
-    try:
-        # Using prompt_toolkit for advanced input features (cursor navigation, history, etc.)
-        return prompt_session.prompt(HTML('<ansiblue><b>▶</b></ansiblue> '))
-    except EOFError:
-        return "/exit"
-    except KeyboardInterrupt:
-        return "" # Clear line and keep going
+def run_tui(ai_instance, debug=False):
+    app = XavionCLI(ai=ai_instance, debug=debug)
+    app.run()

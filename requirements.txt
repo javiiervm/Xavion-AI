@@ -8,3 +8,4 @@ fastapi
 uvicorn
 jinja2
 prompt-toolkit>=3.0.0
+textual>=0.52.0
