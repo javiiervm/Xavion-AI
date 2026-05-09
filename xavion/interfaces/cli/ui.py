@@ -9,6 +9,7 @@ from prompt_toolkit.formatted_text import HTML
 from rich.console import Console
 from rich.markdown import Markdown
 from rich.live import Live
+from rich.table import Table
 
 class XavionCLI:
     def __init__(self, ai, debug=False):
@@ -33,7 +34,8 @@ class XavionCLI:
         width = shutil.get_terminal_size().columns
         box_width = max(0, width - 2)
         bottom_line = '\u2570' + '\u2500' * box_width + '\u256f'  # ╰─╯
-        info = f" workspace ({cwd})   session ({session_id})   /mode ({self.intent_mode})   /model ({model}){debug_str} "
+        #info = f"  ({cwd})   session ({session_id})   /mode ({self.intent_mode})   /model ({model}){debug_str} "
+        info = f"  {cwd}    /mode ({self.intent_mode})    /model ({model}){debug_str} "
         # Usamos HTML para que el borde inferior tenga el mismo color que el resto del recuadro
         return HTML(
             f'<style color="#44475a">{bottom_line}</style>\n'
@@ -51,7 +53,7 @@ class XavionCLI:
             "[/]"
         )
         self.console.print(banner)
-        self.console.print("[dim #6272a4]i[/] type [bold #f8f8f2]/help[/] for commands or start chatting.\n")
+        self.console.print("\nType [bold #f8f8f2]/help[/] for commands or start chatting.\n")
 
     def show_debug(self, message: str, icon: str = "🔍"):
         self.console.print(f"[dim #6272a4]_{icon} {message}_[/]")
@@ -107,14 +109,23 @@ class XavionCLI:
 
     def generate_response(self, user_text: str):
         self.console.print()
-        self.console.print("[bold #bd93f9]✦ Xavion[/]")
         
         full_response = ""
         try:
-            with Live(Markdown("..."), console=self.console, refresh_per_second=15, transient=False) as live:
+            # Iniciamos el Live (ya no hace falta pasarle el Markdown inicial aquí)
+            with Live(console=self.console, refresh_per_second=15, transient=False) as live:
                 for token in self.ai.chat_stream(user_text, intent_mode=self.intent_mode):
                     full_response += token
-                    live.update(Markdown(full_response))
+                    
+                    # Creamos una cuadrícula invisible con 1 espacio de separación horizontal
+                    grid = Table.grid(padding=(0, 1))
+                    
+                    # Añadimos la fila: Columna 1 (Prefijo) | Columna 2 (Markdown dinámico)
+                    grid.add_row("[bold #bd93f9] [/]", Markdown(full_response))
+                    
+                    # Actualizamos el bloque Live con la cuadrícula completa
+                    live.update(grid)
+                    
         except Exception as e:
             self.console.print(f"[bold red]**Error:**[/] {str(e)}")
         
