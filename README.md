@@ -1,17 +1,13 @@
 <div align="center">
-  <img width="600" height="600" alt="Xavion AI logo" src="https://github.com/javiiervm/Xavion-AI/blob/develop/assets/logo_full.png" />
-  <br />
+  <img width="600" height="600" alt="Xavion AI logo" src="https://github.com/javiiervm/Xavion-AI/blob/develop/assets/logo_name.png" />
+  <br /><br />
   <p>
+    <img src="https://img.shields.io/badge/python-3.10%2B-yellow" alt="Python Version" />
+    <img src="https://img.shields.io/badge/ollama-0.5.3-blue" alt="Ollama Version" />
     <img src="https://img.shields.io/github/last-commit/javiiervm/Xavion-AI/develop" alt="Last Commit" />
     <img src="https://img.shields.io/badge/platform-linux%20%7C%20windows%20%7C%20macos-lightgrey" alt="Platform Support" />
     <img src="https://img.shields.io/github/issues/javiiervm/Xavion-AI?branch=develop" alt="Issues" />
     <img src="https://img.shields.io/github/stars/javiiervm/Xavion-AI?branch=develop" alt="Stars" />
-    <br />
-    <img src="https://img.shields.io/badge/python-3.10%2B-yellow" alt="Python Version" />
-    <img src="https://img.shields.io/badge/ollama-0.5.3-blue" alt="Ollama Version" />
-    <img src="https://img.shields.io/badge/langchain-0.3.27-green" alt="LangChain Version" />
-    <img src="https://img.shields.io/badge/fastapi-0.115.0-blue" alt="FastAPI Version" />
-    <img src="https://img.shields.io/badge/rich-13.7.0-magenta" alt="Rich Version" />
   </p>
 </div><br />
 
