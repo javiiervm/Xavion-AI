@@ -10,6 +10,13 @@ from rich.console import Console
 from rich.markdown import Markdown
 from rich.live import Live
 from rich.table import Table
+from prompt_toolkit.application import Application
+from prompt_toolkit.layout.containers import HSplit, Window, VSplit
+from prompt_toolkit.layout.controls import BufferControl, FormattedTextControl
+from prompt_toolkit.layout.layout import Layout
+from prompt_toolkit.buffer import Buffer
+from prompt_toolkit.key_binding import KeyBindings
+from prompt_toolkit.formatted_text import HTML
 
 class XavionCLI:
     def __init__(self, ai, debug=False):
@@ -25,22 +32,14 @@ class XavionCLI:
         
         self.session = PromptSession(style=self.style)
 
-    def get_bottom_toolbar(self):
+
+
+    def _status_info(self) -> str:
+        """Devuelve la línea de info del workspace para imprimirla con Rich."""
         cwd = os.getcwd().replace(os.path.expanduser("~"), "~")
-        session_id = self.ai.current_session_id or "new"
         model = self.ai.model_name
         debug_str = " [debug]" if self.debug_mode else ""
-        # Calculamos el ancho del terminal para dibujar la tapa inferior del recuadro
-        width = shutil.get_terminal_size().columns
-        box_width = max(0, width - 2)
-        bottom_line = '\u2570' + '\u2500' * box_width + '\u256f'  # ╰─╯
-        #info = f"  ({cwd})   session ({session_id})   /mode ({self.intent_mode})   /model ({model}){debug_str} "
-        info = f"  {cwd}    /mode ({self.intent_mode})    /model ({model}){debug_str} "
-        # Usamos HTML para que el borde inferior tenga el mismo color que el resto del recuadro
-        return HTML(
-            f'<style color="#44475a">{bottom_line}</style>\n'
-            f'<style color="#6272a4">{info}</style>'
-        )
+        return f" {cwd}    /mode ({self.intent_mode})    /model ({model}){debug_str} "
 
     def print_banner(self):
         banner = (
@@ -58,6 +57,83 @@ class XavionCLI:
     def show_debug(self, message: str, icon: str = "🔍"):
         self.console.print(f"[dim #6272a4]_{icon} {message}_[/]")
 
+    def _get_input_inline(self):
+        width = shutil.get_terminal_size().columns
+        box_width = max(0, width - 2)
+        
+        top_line = '╭' + '─' * box_width + '╮'
+        bottom_line = '╰' + '─' * box_width + '╯'
+        status = self._status_info().strip()
+
+        input_buffer = Buffer(multiline=False)
+        
+        kb = KeyBindings()
+        @kb.add('enter')
+        def _(event):
+            event.app.exit(result=input_buffer.text)
+        @kb.add('c-c')
+        def _(event):
+            event.app.exit(exception=KeyboardInterrupt())
+        @kb.add('c-d')
+        def _(event):
+            event.app.exit(exception=EOFError())
+
+        layout = Layout(
+            HSplit([
+                # 1. Tapa superior (con fg= en lugar de color= y altura bloqueada)
+                Window(
+                    FormattedTextControl(HTML(f'<style fg="#44475a">{top_line}</style>')), 
+                    height=1, 
+                    dont_extend_height=True
+                ),
+                
+                # 2. Zona central: Pared izq -> Buffer de texto -> Pared der
+                VSplit([
+                    Window(
+                        FormattedTextControl(HTML('<style fg="#44475a">│</style> <style fg="#bd93f9">></style> ')), 
+                        width=4, 
+                        dont_extend_height=True
+                    ),
+                    Window(
+                        BufferControl(buffer=input_buffer), 
+                        wrap_lines=True, 
+                        dont_extend_height=True
+                    ),
+                    Window(
+                        FormattedTextControl(HTML('<style fg="#44475a">│</style>')), 
+                        width=1, 
+                        dont_extend_height=True
+                    ),
+                ]),
+                
+                # 3. Tapa inferior (cerrada MIENTRAS escribes)
+                Window(
+                    FormattedTextControl(HTML(f'<style fg="#44475a">{bottom_line}</style>')), 
+                    height=1, 
+                    dont_extend_height=True
+                ),
+                
+                # 4. Estado separado, por debajo del recuadro, sin irse al fondo de la pantalla
+                Window(
+                    FormattedTextControl(HTML(f'\n  <style fg="#6272a4">{status}</style>')), 
+                    height=2, 
+                    dont_extend_height=True
+                ),
+            ])
+        )
+
+        app = Application(
+            layout=layout,
+            key_bindings=kb,
+            full_screen=False,     
+            erase_when_done=True   
+        )
+
+        result = app.run()
+        if isinstance(result, Exception):
+            raise result
+        return result
+
     def run(self):
         self.print_banner()
         self.ai.start_new_session()
@@ -67,34 +143,23 @@ class XavionCLI:
 
         while True:
             try:
-                # Calculamos dinámicamente el ancho de tu terminal
-                width = shutil.get_terminal_size().columns
-                box_width = max(0, width - 2)
-                
-                # Preparamos las tapas del recuadro
-                top_line = '╭' + '─' * box_width + '╮'
-                bottom_line = '╰' + '─' * box_width + '╯'
-                
-                # Dibujamos la tapa superior
-                self.console.print(f"[#44475a]{top_line}[/]")
-                
+                # 1. Obtenemos el texto con la UI perfecta
                 with patch_stdout():
-                    # El prompt dibuja los laterales (│) y el interior
-                    # La tapa inferior (╰─╯) se muestra en el toolbar en tiempo real
-                    user_text = self.session.prompt(
-                        HTML('<style color="#44475a">│</style> <style color="#bd93f9">></style> '),
-                        prompt_continuation=lambda w, l, wrap: HTML('<style color="#44475a">│</style>   '),
-                        rprompt=HTML('<style color="#44475a">│</style>'),
-                        placeholder=HTML('<style color="#6272a4">Type your message or /help...</style>'),
-                        bottom_toolbar=self.get_bottom_toolbar,
-                    ).strip()
-                
-                # Imprimimos la tapa inferior con Rich para que el recuadro quede completo tras enviar
-                self.console.print(f"[#44475a]{bottom_line}[/]")
+                    user_text = self._get_input_inline().strip()
 
                 if not user_text:
                     continue
-                    
+
+                # 2. Imprimimos el recuadro "estático" y limpio para el historial
+                width = shutil.get_terminal_size().columns
+                box_width = max(0, width - 2)
+                top_line = '╭' + '─' * box_width + '╮'
+                bottom_line = '╰' + '─' * box_width + '╯'
+                
+                self.console.print(f"[#44475a]{top_line}[/]")
+                self.console.print(f"[#44475a]│[/] [bold #bd93f9]>[/] {user_text}")
+                self.console.print(f"[#44475a]{bottom_line}[/]")
+
                 if user_text.startswith("/"):
                     self.handle_command(user_text)
                 else:
