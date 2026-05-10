@@ -63,17 +63,18 @@ class XavionAI:
         instruction = INSTRUCTION_MAP.get(intent, INSTRUCTION_MAP["default"])
         template = TEMPLATES.get(intent, TEMPLATES["default"])
         
+        # 1. Definimos los parámetros base que TODOS los templates necesitan ahora
         params = {
             "instruction": instruction,
             "conversation_history": self._format_history(),
             "question": message,
-            "tone_directive": TONE_MAP.get(tone_mode, TONE_MAP["casual"]) # <--- Nuevo
+            "knowledge": self.system_knowledge,  # <--- Ahora se envía siempre
+            "tone_directive": TONE_MAP.get(tone_mode, TONE_MAP["casual"])
         }
 
+        # 2. Añadimos parámetros específicos solo si son necesarios
         if intent == "math":
             params["expressions"] = ", ".join(keywords) if keywords else "N/A"
-        elif intent == "default":
-            params["knowledge"] = self.system_knowledge
 
         prompt = ChatPromptTemplate.from_template(template)
         return prompt, params, intent
