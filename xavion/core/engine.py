@@ -6,7 +6,7 @@ from langchain_ollama import OllamaLLM
 from langchain_core.prompts import ChatPromptTemplate
 from xavion.core.constants import (
     DEFAULT_MODEL, DEFAULT_SYSTEM_KNOWLEDGE, 
-    INSTRUCTION_MAP, TEMPLATES
+    INSTRUCTION_MAP, TEMPLATES, TONE_MAP
 )
 from xavion.core.intent import IntentDetector
 import requests
@@ -53,7 +53,7 @@ class XavionAI:
             formatted += f"User: {entry['user']}\nAI: {entry['assistant']}\n"
         return formatted
 
-    def _prepare_chain(self, message: str, intent_mode: str = "auto"):
+    def _prepare_chain(self, message: str, intent_mode: str = "auto", tone_mode: str = "casual"):
         if intent_mode == "auto":
             intent, keywords = self.detector.get_intent(message)
         else:
@@ -66,7 +66,8 @@ class XavionAI:
         params = {
             "instruction": instruction,
             "conversation_history": self._format_history(),
-            "question": message
+            "question": message,
+            "tone_directive": TONE_MAP.get(tone_mode, TONE_MAP["casual"]) # <--- Nuevo
         }
 
         if intent == "math":
@@ -77,8 +78,8 @@ class XavionAI:
         prompt = ChatPromptTemplate.from_template(template)
         return prompt, params, intent
 
-    def chat_stream(self, message: str, intent_mode: str = "auto") -> Generator[str, None, None]:
-        prompt, params, _ = self._prepare_chain(message, intent_mode)
+    def chat_stream(self, message: str, intent_mode: str = "auto", tone_mode: str = "casual") -> Generator[str, None, None]:
+        prompt, params, _ = self._prepare_chain(message, intent_mode, tone_mode)
         model = self._get_model()
         chain = prompt | model
         

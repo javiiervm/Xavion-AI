@@ -133,7 +133,7 @@ def main():
     finally:
         if ollama_process:
             stop_ollama(ollama_process)
-        print("[+] Xavion AI closed.")
+        print(f"\n[+] Xavion AI closed.\n")
 
 if __name__ == "__main__":
     main()

@@ -57,6 +57,7 @@ class XavionCLI:
         self.ai = ai
         self.debug_mode = debug
         self.intent_mode = "auto"
+        self.tone_mode = "casual"
         self.console = Console()
 
     def _status_info(self) -> str:
@@ -65,8 +66,7 @@ class XavionCLI:
         model = self.ai.model_name
         debug_str = " [debug]" if self.debug_mode else ""
         
-        # Usamos la sintaxis HTML que prompt_toolkit entiende (etiquetas <style>)
-        return f" {cwd}    <style fg='{COLOR_ACCENT}' bg='default' class='bold'>/mode</style> ({self.intent_mode})    <style fg='{COLOR_ACCENT}' bg='default' class='bold'>/model</style> ({model}){debug_str}"
+        return f" {cwd}    <style fg='{COLOR_ACCENT}' bg='default' class='bold'>/mode</style> ({self.intent_mode})    <style fg='{COLOR_ACCENT}' bg='default' class='bold'>/tone</style> ({self.tone_mode})    <style fg='{COLOR_ACCENT}' bg='default' class='bold'>/model</style> ({model}){debug_str}"
     
     def print_banner(self):
         """Displays the compact startup banner with an organic flame ASCII and system status."""
@@ -99,7 +99,7 @@ class XavionCLI:
         
         self.console.print()
         self.console.print(grid)
-        self.console.print(f"\nType [bold {COLOR_ACCENT}]/help[/] for commands or start chatting.\n")
+        self.console.print(f"Type [bold {COLOR_ACCENT}]/help[/] for commands or start chatting.\n")
 
     def show_debug(self, message: str, icon: str = "🔍"):
         """Formats and prints internal debug messages."""
@@ -232,7 +232,7 @@ class XavionCLI:
             except EOFError:
                 break     
                 
-        self.console.print(f"[bold {COLOR_PRIMARY}]Goodbye![/]")
+        #self.console.print(f"[bold {COLOR_PRIMARY}]Goodbye![/]")
 
     def generate_response(self, user_text: str):
         """Streams the AI response dynamically with a live-updating Markdown grid."""
@@ -247,7 +247,7 @@ class XavionCLI:
                 live.update(grid)
 
                 # Append tokens as they stream and update the grid
-                for token in self.ai.chat_stream(user_text, intent_mode=self.intent_mode):
+                for token in self.ai.chat_stream(user_text, intent_mode=self.intent_mode, tone_mode=self.tone_mode):
                     full_response += token
                     
                     grid = Table.grid(padding=(0, 1))
@@ -273,6 +273,8 @@ class XavionCLI:
 **Session Control:**
 - `/new`           - Start a completely new conversation
 - `/reset`         - Clear history for current session
+- `/sessions`      - List previous conversations
+- `/load:<id>`     - Load a specific session
 
 **Core Commands:**
 - `/exit`          - Close the application
@@ -283,6 +285,7 @@ class XavionCLI:
 - `/models`        - List installed models
 - `/model:<name>`  - Switch model
 - `/mode:<name>`   - Switch mode (auto, math, code, default)
+- `/tone:<name>`   - Switch tone (casual, formal, sarcastic, concise)
 """
             self.console.print(Markdown(help_text))
             
@@ -316,13 +319,26 @@ class XavionCLI:
                 self.console.print(f"[dim {COLOR_ACCENT}]i[/] Current model: {self.ai.model_name}")
                 
         elif cmd == "/mode":
-            self.console.print(f"[dim {COLOR_ACCENT}]i[/] Available modes: auto, default, math, code")
-            
-        elif cmd.startswith("/mode:"):
-            new_mode = cmd_input.split(":")[1].strip()
-            if new_mode in ["auto", "default", "math", "code"]:
-                self.intent_mode = new_mode
-                self.console.print(f"[dim {COLOR_ACCENT}]i[/] Mode switched to: {new_mode}")
+            if len(cmd_parts) > 1:
+                new_mode = cmd_parts[1].strip()
+                if new_mode in ["auto", "default", "math", "code"]:
+                    self.intent_mode = new_mode
+                    self.console.print(f"[dim {COLOR_ACCENT}]i[/] Mode switched to: {new_mode}")
+                else:
+                    self.console.print(f"[bold {COLOR_ERROR}]![/] Invalid mode. Available: auto, default, math, code")
+            else:
+                self.console.print(f"[dim {COLOR_ACCENT}]i[/] Available modes: auto, default, math, code")
+                
+        elif cmd == "/tone":
+            if len(cmd_parts) > 1:
+                new_tone = cmd_parts[1].strip()
+                if new_tone in ["casual", "formal", "sarcastic", "concise"]:
+                    self.tone_mode = new_tone
+                    self.console.print(f"[dim {COLOR_ACCENT}]i[/] Tone switched to: {new_tone}")
+                else:
+                    self.console.print(f"[bold {COLOR_ERROR}]![/] Invalid tone. Available: casual, formal, sarcastic, concise")
+            else:
+                self.console.print(f"[dim {COLOR_ACCENT}]i[/] Available tones: casual, formal, sarcastic, concise")
                 
         elif cmd == "/sessions":
             sessions = self.ai.list_sessions_detailed()
@@ -336,12 +352,15 @@ class XavionCLI:
                 msg += "\n*Use `/load:<id>` to load a session.*"
                 self.console.print(Markdown(msg))
                 
-        elif cmd.startswith("/load:"):
-            target_id = cmd_input.split(":")[1].strip()
-            if self.ai.load_session(target_id):
-                self.console.print(f"[dim {COLOR_ACCENT}]i[/] Loaded session: {target_id}")
+        elif cmd == "/load":
+            if len(cmd_parts) > 1:
+                target_id = cmd_parts[1].strip()
+                if self.ai.load_session(target_id):
+                    self.console.print(f"[dim {COLOR_ACCENT}]i[/] Loaded session: {target_id}")
+                else:
+                    self.console.print(f"[bold {COLOR_ERROR}]![/] Failed to load session: {target_id}")
             else:
-                self.console.print(f"[bold {COLOR_ERROR}]![/] Failed to load session: {target_id}")
+                self.console.print(f"[bold {COLOR_ERROR}]![/] You must specify a session ID. Example: /load:chat_20231025_120000")
                 
         else:
             self.console.print(f"[bold {COLOR_ERROR}]![/] Unknown command: {cmd}")
