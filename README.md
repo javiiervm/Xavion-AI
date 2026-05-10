@@ -1,15 +1,15 @@
 <div align="center">
   <img width="600" height="600" alt="Xavion AI logo" src="https://github.com/javiiervm/Xavion-AI/blob/develop/assets/logo_name.png" />
-  <br /><br />
+  <br />
   <p>
-    <img src="https://img.shields.io/badge/python-3.10%2B-yellow" alt="Python Version" />
+    <!-- <img src="https://img.shields.io/badge/python-3.10%2B-yellow" alt="Python Version" />
     <img src="https://img.shields.io/badge/ollama-0.5.3-blue" alt="Ollama Version" />
     <img src="https://img.shields.io/github/last-commit/javiiervm/Xavion-AI/develop" alt="Last Commit" />
     <img src="https://img.shields.io/badge/platform-linux%20%7C%20windows%20%7C%20macos-lightgrey" alt="Platform Support" />
     <img src="https://img.shields.io/github/issues/javiiervm/Xavion-AI?branch=develop" alt="Issues" />
-    <img src="https://img.shields.io/github/stars/javiiervm/Xavion-AI?branch=develop" alt="Stars" />
+    <img src="https://img.shields.io/github/stars/javiiervm/Xavion-AI?branch=develop" alt="Stars" /> -->
   </p>
-</div><br />
+</div>
 
 Xavion AI is a **local-first assistant** that runs entirely on your machine using **Ollama** for local inference and **LangChain** for robust orchestration, providing a seamless, low-latency experience. It features a dual-interface system: a high-fidelity **Terminal CLI** and a modern **Web Interface**, both powered by a shared, frontend-agnostic backend.
 
