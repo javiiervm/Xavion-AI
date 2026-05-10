@@ -12,6 +12,7 @@ from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.layout.processors import Processor, Transformation
 from prompt_toolkit.patch_stdout import patch_stdout
+from prompt_toolkit.layout.margins import Margin
 
 # Rich: Output rendering and formatting
 from rich.console import Console
@@ -33,6 +34,19 @@ class PlaceholderProcessor(Processor):
             # Show gray placeholder if no text is typed
             return Transformation(fragments=[('fg:#6272a4', self.placeholder_text)])
         return Transformation(ti.fragments)
+
+
+class RightWallMargin(Margin):
+    """Draws the right border dynamically for every line of the input buffer."""
+    def get_width(self, get_ui_content):
+        return 1
+
+    def create_margin(self, window_render_info, width, height):
+        # LA SOLUCIÓN DEFINITIVA: Usar *args evita que crashee sin importar 
+        # los argumentos que le pase tu versión de prompt_toolkit
+        def get_line(*args):
+            return [('fg:#44475a', '│')]
+        return get_line
 
 
 class XavionCLI:
@@ -96,25 +110,23 @@ class XavionCLI:
                 return [('fg:#44475a', '│ '), ('fg:#bd93f9', '> ')]
             return [('fg:#44475a', '│   ')]
 
-        # Define UI layout
+        # Define UI layout (Using Margin for the right wall)
         layout = Layout(
             HSplit([
                 # 1. Top Border
                 Window(FormattedTextControl(HTML(f'<style fg="#44475a">{top_line}</style>')), height=1, dont_extend_height=True),
                 
-                # 2. Middle Section: Left Border + Input + Right Border
-                VSplit([
-                    Window(
-                        BufferControl(
-                            buffer=input_buffer,
-                            input_processors=[PlaceholderProcessor("Type your message or /help...")]
-                        ), 
-                        get_line_prefix=get_prefix,
-                        wrap_lines=True,
-                        dont_extend_height=True # THE CRITICAL FIX: prevents the massive vertical gap
-                    ),
-                    Window(width=1, char='│', style='fg:#44475a', dont_extend_height=True),
-                ]),
+                # 2. Middle Section: Input + Dynamic Margins
+                Window(
+                    BufferControl(
+                        buffer=input_buffer,
+                        input_processors=[PlaceholderProcessor("Type your message or /help...")]
+                    ), 
+                    get_line_prefix=get_prefix,
+                    right_margins=[RightWallMargin()], # Wall auto-scales perfectly now
+                    wrap_lines=True,
+                    dont_extend_height=True
+                ),
                 
                 # 3. Bottom Border
                 Window(FormattedTextControl(HTML(f'<style fg="#44475a">{bottom_line}</style>')), height=1, dont_extend_height=True),
