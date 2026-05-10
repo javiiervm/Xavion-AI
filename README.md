@@ -11,9 +11,7 @@
   </p>
 </div>
 
-<div align="justify">
-Xavion AI is a <b>local-first assistant</b> that runs entirely on your machine using **Ollama** for local inference and **LangChain** for robust orchestration, providing a seamless, low-latency experience. It features a dual-interface system: a high-fidelity **Terminal CLI** and a modern **Web Interface**, both powered by a shared, frontend-agnostic backend.
-</div>
+Xavion AI is a **local-first assistant** that runs entirely on your machine using **Ollama** for local inference and **LangChain** for robust orchestration, providing a seamless, low-latency experience. It features a dual-interface system: a high-fidelity **Terminal CLI** and a modern **Web Interface**, both powered by a shared, frontend-agnostic backend.
 
 ## Main Features
 
