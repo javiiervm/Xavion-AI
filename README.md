@@ -2,20 +2,13 @@
   <img width="600" height="600" alt="Xavion AI logo" src="https://github.com/javiiervm/Xavion-AI/blob/develop/assets/logo_name.png" />
   <br />
   <p>
-  <!-- Etiquetas alineadas a la izquierda -->
-  <img align="left" src="https://img.shields.io/badge/python-3.10%2B-yellow" alt="Python Version" />
-  <img align="left" src="https://img.shields.io/badge/ollama-0.5.3-blue" alt="Ollama Version" />
-  <img align="left" src="https://img.shields.io/badge/platform-linux%20%7C%20windows%20%7C%20macos-lightgrey" alt="Platform Support" />
-
-  <!-- Etiquetas alineadas a la derecha -->
-  <!-- Nota: La primera etiqueta de esta lista será la que quede más pegada al borde derecho -->
-  <img align="right" src="https://img.shields.io/github/stars/javiiervm/Xavion-AI?branch=develop" alt="Stars" />
-  <img align="right" src="https://img.shields.io/github/issues/javiiervm/Xavion-AI?branch=develop" alt="Issues" />
-  <img align="right" src="https://img.shields.io/github/last-commit/javiiervm/Xavion-AI/develop" alt="Last Commit" />
-</p>
-
-<!-- ⚠️ IMPORTANTE: Añade esta etiqueta justo debajo para "limpiar" el espacio y que el texto que escribas después no se suba y se mezcle con los badges -->
-<br clear="both" />
+    <img src="https://img.shields.io/badge/python-3.10%2B-yellow" alt="Python Version" />
+    <img src="https://img.shields.io/badge/ollama-0.5.3-blue" alt="Ollama Version" />
+    <img src="https://img.shields.io/badge/platform-linux%20%7C%20windows%20%7C%20macos-lightgrey" alt="Platform Support" />
+    <img src="https://img.shields.io/github/stars/javiiervm/Xavion-AI?branch=develop" alt="Stars" />
+    <img src="https://img.shields.io/github/issues/javiiervm/Xavion-AI?branch=develop" alt="Issues" />
+    <img src="https://img.shields.io/github/last-commit/javiiervm/Xavion-AI/develop" alt="Last Commit" />
+  </p>
 </div>
 
 <div align="justify">
