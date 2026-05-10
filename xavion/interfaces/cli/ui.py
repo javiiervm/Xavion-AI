@@ -12,7 +12,6 @@ from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.layout.processors import Processor, Transformation
 from prompt_toolkit.patch_stdout import patch_stdout
-from prompt_toolkit.layout.margins import Margin
 
 # Rich: Output rendering and formatting
 from rich.console import Console
@@ -25,31 +24,19 @@ import rich.box
 
 
 class PlaceholderProcessor(Processor):
-    """Injects placeholder text when the input buffer is empty."""
+    """Injects a gray placeholder string when the input buffer is completely empty."""
     def __init__(self, placeholder_text: str):
         self.placeholder_text = placeholder_text
 
     def apply_transformation(self, ti):
         if not ti.document.text:
-            # Show gray placeholder if no text is typed
             return Transformation(fragments=[('fg:#6272a4', self.placeholder_text)])
         return Transformation(ti.fragments)
 
 
-class RightWallMargin(Margin):
-    """Draws the right border dynamically for every line of the input buffer."""
-    def get_width(self, get_ui_content):
-        return 1
-
-    def create_margin(self, window_render_info, width, height):
-        # LA SOLUCIÓN DEFINITIVA: Usar *args evita que crashee sin importar 
-        # los argumentos que le pase tu versión de prompt_toolkit
-        def get_line(*args):
-            return [('fg:#44475a', '│')]
-        return get_line
-
-
 class XavionCLI:
+    """Core Command Line Interface class handling AI interactions and UI rendering."""
+    
     def __init__(self, ai, debug=False):
         self.ai = ai
         self.debug_mode = debug
@@ -57,7 +44,7 @@ class XavionCLI:
         self.console = Console()
 
     def _status_info(self) -> str:
-        """Generates the status string with cwd, mode, and model info."""
+        """Generates the bottom status string containing the current working directory, mode, and model."""
         cwd = os.getcwd().replace(os.path.expanduser("~"), "~")
         model = self.ai.model_name
         debug_str = " [debug]" if self.debug_mode else ""
@@ -78,11 +65,15 @@ class XavionCLI:
         self.console.print("\nType [bold #f8f8f2]/help[/] for commands or start chatting.\n")
 
     def show_debug(self, message: str, icon: str = "🔍"):
-        """Formats and prints debug messages."""
+        """Formats and prints internal debug messages."""
         self.console.print(f"[dim #6272a4]_{icon} {message}_[/]")
 
     def _get_input_inline(self) -> str:
-        """Draws the dynamic, compact multiline input box attached to the cursor."""
+        """
+        Draws a dynamic, compact multiline input box attached to the cursor.
+        Utilizes prompt_toolkit's native VSplit layout to handle text wrapping 
+        and border scaling automatically without occupying the full terminal height.
+        """
         width = shutil.get_terminal_size().columns
         box_width = max(0, width - 2)
         
@@ -92,56 +83,70 @@ class XavionCLI:
 
         input_buffer = Buffer(multiline=False)
         
-        # Setup key bindings for the inline app
+        # Setup key bindings for the ephemeral application
         kb = KeyBindings()
+        
         @kb.add('enter')
         def _(event):
             event.app.exit(result=input_buffer.text)
+            
         @kb.add('c-c')
         def _(event):
             event.app.exit(exception=KeyboardInterrupt())
+            
         @kb.add('c-d')
         def _(event):
             event.app.exit(exception=EOFError())
 
-        # Dynamic left border for text wrapping
+        # Dynamically draw the left border and the input cursor prefix
         def get_prefix(line_number, wrap_count):
             if line_number == 0 and wrap_count == 0:
                 return [('fg:#44475a', '│ '), ('fg:#bd93f9', '> ')]
             return [('fg:#44475a', '│   ')]
 
-        # Define UI layout (Using Margin for the right wall)
+        # Define the structural layout
         layout = Layout(
             HSplit([
-                # 1. Top Border
+                # 1. Top Border: Locked to exactly 1 line
                 Window(FormattedTextControl(HTML(f'<style fg="#44475a">{top_line}</style>')), height=1, dont_extend_height=True),
                 
-                # 2. Middle Section: Input + Dynamic Margins
-                Window(
-                    BufferControl(
-                        buffer=input_buffer,
-                        input_processors=[PlaceholderProcessor("Type your message or /help...")]
-                    ), 
-                    get_line_prefix=get_prefix,
-                    right_margins=[RightWallMargin()], # Wall auto-scales perfectly now
-                    wrap_lines=True,
-                    dont_extend_height=True
-                ),
+                # 2. Middle Section: Input Buffer + Right Border
+                VSplit([
+                    # Input Area: dont_extend_height=True is CRITICAL here. 
+                    # It forces the buffer to only grow as tall as the wrapped text requires,
+                    # preventing the layout from expanding to fill the entire terminal screen.
+                    Window(
+                        BufferControl(
+                            buffer=input_buffer,
+                            input_processors=[PlaceholderProcessor("Type your message or /help...")]
+                        ), 
+                        get_line_prefix=get_prefix,
+                        wrap_lines=True,
+                        dont_extend_height=True 
+                    ),
+                    # Right Wall: By omitting dont_extend_height=True, this specific window
+                    # is allowed to elastically stretch to match the exact height of the BufferControl.
+                    Window(
+                        width=1, 
+                        char='│', 
+                        style='fg:#44475a'
+                    ),
+                ]),
                 
-                # 3. Bottom Border
+                # 3. Bottom Border: Locked to exactly 1 line
                 Window(FormattedTextControl(HTML(f'<style fg="#44475a">{bottom_line}</style>')), height=1, dont_extend_height=True),
                 
-                # 4. Status Info
+                # 4. Status Information: Locked to exactly 1 line
                 Window(FormattedTextControl(HTML(f'  <style fg="#6272a4">{status}</style>')), height=1, dont_extend_height=True),
             ])
         )
 
-        # Run temporary Application
+        # Execute the temporary inline Application
         app = Application(
             layout=layout, 
             key_bindings=kb, 
-            full_screen=False, 
-            erase_when_done=True
+            full_screen=False,     # Prevents clearing the terminal history
+            erase_when_done=True   # Removes the UI components after the user hits Enter
         )
 
         result = app.run()
@@ -150,7 +155,7 @@ class XavionCLI:
         return result
 
     def run(self):
-        """Main application loop."""
+        """Main application loop handling I/O operations and rendering history."""
         self.print_banner()
         self.ai.start_new_session()
         
@@ -159,14 +164,14 @@ class XavionCLI:
 
         while True:
             try:
-                # 1. Capture dynamic input
+                # 1. Capture user input via the dynamic inline UI
                 with patch_stdout():
                     user_text = self._get_input_inline().strip()
 
                 if not user_text:
                     continue
 
-                # 2. Render static history block perfectly using Rich Panel
+                # 2. Render the submitted message into the terminal history using a Rich Panel
                 panel_content = Text.from_markup(f" [bold #bd93f9]>[/] {user_text}")
                 self.console.print(Panel(
                     panel_content,
@@ -176,7 +181,7 @@ class XavionCLI:
                     expand=True
                 ))
 
-                # 3. Process input commands or chat
+                # 3. Route the input to either internal commands or AI generation
                 if user_text.startswith("/"):
                     self.handle_command(user_text)
                 else:
@@ -190,18 +195,18 @@ class XavionCLI:
         self.console.print("[bold #bd93f9]Goodbye![/]")
 
     def generate_response(self, user_text: str):
-        """Streams AI response dynamically."""
+        """Streams the AI response dynamically with a live-updating Markdown grid."""
         self.console.print()
         
         full_response = ""
         try:
-            # Init Live with an empty dot instantly
+            # Initialize the Live display immediately with an empty bullet point
             with Live(console=self.console, refresh_per_second=15, transient=False) as live:
                 grid = Table.grid(padding=(0, 1))
                 grid.add_row("[bold #bd93f9] [/]", Markdown(full_response))
                 live.update(grid)
 
-                # Process the stream
+                # Append tokens as they stream and update the grid
                 for token in self.ai.chat_stream(user_text, intent_mode=self.intent_mode):
                     full_response += token
                     
@@ -215,7 +220,7 @@ class XavionCLI:
         self.console.print()
 
     def handle_command(self, cmd_input: str):
-        """Parses and executes internal slash commands."""
+        """Parses and executes built-in slash commands."""
         cmd_parts = cmd_input.lower().strip().split(":")
         cmd = cmd_parts[0]
         
