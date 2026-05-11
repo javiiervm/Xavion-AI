@@ -64,6 +64,8 @@ class XavionCLI:
         self.console = Console()
         self.last_code_blocks = []
         self.input_history = InMemoryHistory()
+        self.last_models = []
+        self.last_sessions = []
 
     def _status_info(self) -> str:
         """Generates the bottom status string containing the current working directory, mode, and model."""
@@ -290,7 +292,7 @@ class XavionCLI:
 - `/new`           - Start a completely new conversation
 - `/reset`         - Clear history for current session
 - `/sessions`      - List previous conversations
-- `/load:<id>`     - Load a specific session
+- `/load:<id/idx>` - Load a specific session (by ID or index)
 
 **Core Commands:**
 - `/copy`          - Copy the last code block to clipboard
@@ -301,7 +303,7 @@ class XavionCLI:
 **Settings:**
 - `/debug`         - Toggle debug mode
 - `/models`        - List installed models
-- `/model:<name>`  - Switch model
+- `/model:<name/idx>` - Switch model (by name or index)
 - `/mode:<name>`   - Switch mode (auto, math, code, translate, default)
 - `/tone:<name>`   - Switch tone (casual, formal, sarcastic, concise)
 """
@@ -348,8 +350,13 @@ class XavionCLI:
             
         elif cmd == "/models":
             models = self.ai.list_available_models()
+            self.last_models = models
             if models:
-                self.console.print(f"[dim {COLOR_ACCENT}]i[/] Available models: {', '.join(models)}")
+                msg = "**Available Models:**\n"
+                for i, m in enumerate(models):
+                    msg += f"{i+1}. `{m}`\n"
+                msg += "\n*Use `/model:<id>` to switch model.*"
+                self.console.print(Markdown(msg))
             else:
                 self.console.print(f"[dim {COLOR_ACCENT}]i[/] No models found.")
                 
@@ -361,19 +368,28 @@ class XavionCLI:
                 return
 
             if len(cmd_parts) > 1:
-                new_model = cmd_parts[1].strip()
-                # Find matching model (case-insensitive or partial match could be added, but exact for now)
-                if new_model in available_models:
+                target = cmd_parts[1].strip()
+                new_model = None
+
+                # 1. Try numeric ID from last /models list
+                if target.isdigit():
+                    idx = int(target) - 1
+                    if 0 <= idx < len(self.last_models):
+                        new_model = self.last_models[idx]
+                
+                # 2. Try exact name match
+                if not new_model and target in available_models:
+                    new_model = target
+                
+                if new_model:
                     self.ai.model_name = new_model
                     self.console.print(f"[dim {COLOR_ACCENT}]i[/] Model switched to: [bold {COLOR_SECONDARY}]{new_model}[/]")
                 else:
-                    self.console.print(f"[bold {COLOR_ERROR}]![/] Model '{new_model}' not found. Available: {', '.join(available_models)}")
+                    self.console.print(f"[bold {COLOR_ERROR}]![/] Model '{target}' not found. Available: {', '.join(available_models)}")
             else:
                 # Cycle logic
                 current = self.ai.model_name
                 try:
-                    # Find current index. If current model name is not in tags (e.g. it has :latest and tags has it too)
-                    # Ollama models often have tags.
                     idx = -1
                     for i, m in enumerate(available_models):
                         if m == current or m.startswith(current + ":"):
@@ -411,6 +427,7 @@ class XavionCLI:
                 
         elif cmd == "/sessions":
             sessions = self.ai.list_sessions_detailed()
+            self.last_sessions = sessions
             if not sessions:
                 self.console.print(f"[dim {COLOR_ACCENT}]i[/] No previous conversations found.")
             else:
@@ -423,13 +440,25 @@ class XavionCLI:
                 
         elif cmd == "/load":
             if len(cmd_parts) > 1:
-                target_id = cmd_parts[1].strip()
+                target = cmd_parts[1].strip()
+                target_id = None
+
+                # 1. Try numeric ID from last /sessions list
+                if target.isdigit():
+                    idx = int(target) - 1
+                    if 0 <= idx < len(self.last_sessions):
+                        target_id = self.last_sessions[idx]['id']
+                
+                # 2. Try exact ID if numeric didn't work
+                if not target_id:
+                    target_id = target
+
                 if self.ai.load_session(target_id):
                     self.console.print(f"[dim {COLOR_ACCENT}]i[/] Loaded session: {target_id}")
                 else:
                     self.console.print(f"[bold {COLOR_ERROR}]![/] Failed to load session: {target_id}")
             else:
-                self.console.print(f"[bold {COLOR_ERROR}]![/] You must specify a session ID. Example: /load:chat_20231025_120000")
+                self.console.print(f"[bold {COLOR_ERROR}]![/] You must specify a session ID or index. Example: /load:1 or /load:chat_20231025_120000")
                 
         else:
             self.console.print(f"[bold {COLOR_ERROR}]![/] Unknown command: {cmd}")
