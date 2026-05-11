@@ -1,6 +1,8 @@
 import os
 import time
 import shutil
+import re
+import pyperclip
 
 # Prompt Toolkit: Input UI components
 from prompt_toolkit.application import Application
@@ -12,6 +14,7 @@ from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.layout.processors import Processor, Transformation
 from prompt_toolkit.patch_stdout import patch_stdout
+from prompt_toolkit.history import InMemoryHistory
 
 # Rich: Output rendering and formatting
 from rich.console import Console
@@ -59,6 +62,8 @@ class XavionCLI:
         self.intent_mode = "auto"
         self.tone_mode = "casual"
         self.console = Console()
+        self.last_code_blocks = []
+        self.input_history = InMemoryHistory()
 
     def _status_info(self) -> str:
         """Generates the bottom status string containing the current working directory, mode, and model."""
@@ -118,7 +123,7 @@ class XavionCLI:
         bottom_line = '╰' + '─' * box_width + '╯'
         status = self._status_info()
 
-        input_buffer = Buffer(multiline=False)
+        input_buffer = Buffer(multiline=False, history=self.input_history)
         
         # Setup key bindings for the ephemeral application
         kb = KeyBindings()
@@ -211,6 +216,9 @@ class XavionCLI:
                 if not user_text:
                     continue
 
+                # Add to input history
+                self.input_history.append_string(user_text)
+
                 # 2. Render the submitted message into the terminal history using a Rich Panel
                 panel_content = Text.from_markup(f" [bold {COLOR_SECONDARY}]>[/] {user_text}")
                 self.console.print(Panel(
@@ -253,6 +261,14 @@ class XavionCLI:
                     grid = Table.grid(padding=(0, 1))
                     grid.add_row(f"[bold {COLOR_SECONDARY}] [/]", Markdown(full_response))
                     live.update(grid)
+            
+            # Extract code blocks for /copy command
+            # This regex captures content between triple backticks
+            self.last_code_blocks = re.findall(r"```(?:\w+)?\n(.*?)\n```", full_response, re.DOTALL)
+            if self.last_code_blocks:
+                count = len(self.last_code_blocks)
+                suffix = f"block{'s' if count > 1 else ''}"
+                self.console.print(f"\n[dim {COLOR_ACCENT}]i {count} code {suffix} detected. Type [/][bold {COLOR_ACCENT}]/copy[/][dim {COLOR_ACCENT}] to copy the last one.[/]")
                     
         except Exception as e:
             # Keep errors a bit brighter red for visibility
@@ -277,6 +293,8 @@ class XavionCLI:
 - `/load:<id>`     - Load a specific session
 
 **Core Commands:**
+- `/copy`          - Copy the last code block to clipboard
+- `/copy:<n>`      - Copy the N-th code block
 - `/exit`          - Close the application
 - `/help`          - Show this guide
 
@@ -284,11 +302,36 @@ class XavionCLI:
 - `/debug`         - Toggle debug mode
 - `/models`        - List installed models
 - `/model:<name>`  - Switch model
-- `/mode:<name>`   - Switch mode (auto, math, code, default)
+- `/mode:<name>`   - Switch mode (auto, math, code, translate, default)
 - `/tone:<name>`   - Switch tone (casual, formal, sarcastic, concise)
 """
             self.console.print(Markdown(help_text))
             
+        elif cmd == "/copy":
+            if not self.last_code_blocks:
+                self.console.print(f"[bold {COLOR_ERROR}]![/] No code blocks found in the last response.")
+            else:
+                # Default to the last one if no index specified
+                index = len(self.last_code_blocks) - 1
+                
+                # Check if an index was provided, e.g., /copy:1
+                if len(cmd_parts) > 1:
+                    try:
+                        # Try to parse the index after the colon
+                        index = int(cmd_parts[1]) - 1
+                    except ValueError:
+                        pass
+                
+                if 0 <= index < len(self.last_code_blocks):
+                    content = self.last_code_blocks[index]
+                    try:
+                        pyperclip.copy(content)
+                        self.console.print(f"[dim {COLOR_ACCENT}]i[/] Code block {index + 1} copied to clipboard!")
+                    except Exception as e:
+                        self.console.print(f"[bold {COLOR_ERROR}]![/] Error copying to clipboard: {e}")
+                else:
+                    self.console.print(f"[bold {COLOR_ERROR}]![/] Invalid block index. Available: 1-{len(self.last_code_blocks)}")
+
         elif cmd == "/new":
             new_id = self.ai.start_new_session()
             self.console.print(f"[dim {COLOR_ACCENT}]i[/] Started new session: {new_id}")
@@ -311,23 +354,49 @@ class XavionCLI:
                 self.console.print(f"[dim {COLOR_ACCENT}]i[/] No models found.")
                 
         elif cmd == "/model":
+            available_models = self.ai.list_available_models()
+            
+            if not available_models:
+                self.console.print(f"[bold {COLOR_ERROR}]![/] No models found via Ollama. Make sure it is running.")
+                return
+
             if len(cmd_parts) > 1:
                 new_model = cmd_parts[1].strip()
-                self.ai.model_name = new_model
-                self.console.print(f"[dim {COLOR_ACCENT}]i[/] Model switched to: {new_model}")
+                # Find matching model (case-insensitive or partial match could be added, but exact for now)
+                if new_model in available_models:
+                    self.ai.model_name = new_model
+                    self.console.print(f"[dim {COLOR_ACCENT}]i[/] Model switched to: [bold {COLOR_SECONDARY}]{new_model}[/]")
+                else:
+                    self.console.print(f"[bold {COLOR_ERROR}]![/] Model '{new_model}' not found. Available: {', '.join(available_models)}")
             else:
-                self.console.print(f"[dim {COLOR_ACCENT}]i[/] Current model: {self.ai.model_name}")
+                # Cycle logic
+                current = self.ai.model_name
+                try:
+                    # Find current index. If current model name is not in tags (e.g. it has :latest and tags has it too)
+                    # Ollama models often have tags.
+                    idx = -1
+                    for i, m in enumerate(available_models):
+                        if m == current or m.startswith(current + ":"):
+                            idx = i
+                            break
+                    
+                    next_idx = (idx + 1) % len(available_models)
+                    new_model = available_models[next_idx]
+                    self.ai.model_name = new_model
+                    self.console.print(f"[dim {COLOR_ACCENT}]i[/] Model cycled to: [bold {COLOR_SECONDARY}]{new_model}[/]")
+                except Exception as e:
+                    self.console.print(f"[bold {COLOR_ERROR}]![/] Error cycling models: {e}")
                 
         elif cmd == "/mode":
             if len(cmd_parts) > 1:
                 new_mode = cmd_parts[1].strip()
-                if new_mode in ["auto", "default", "math", "code"]:
+                if new_mode in ["auto", "default", "math", "code", "translate"]:
                     self.intent_mode = new_mode
                     self.console.print(f"[dim {COLOR_ACCENT}]i[/] Mode switched to: {new_mode}")
                 else:
-                    self.console.print(f"[bold {COLOR_ERROR}]![/] Invalid mode. Available: auto, default, math, code")
+                    self.console.print(f"[bold {COLOR_ERROR}]![/] Invalid mode. Available: auto, default, math, code, translate")
             else:
-                self.console.print(f"[dim {COLOR_ACCENT}]i[/] Available modes: auto, default, math, code")
+                self.console.print(f"[dim {COLOR_ACCENT}]i[/] Available modes: auto, default, math, code, translate")
                 
         elif cmd == "/tone":
             if len(cmd_parts) > 1:

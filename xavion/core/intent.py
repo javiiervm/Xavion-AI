@@ -1,6 +1,6 @@
 import re
-from typing import Tuple, List, Optional, Callable
-from xavion.core.constants import MATH_PATTERNS, CODE_PATTERNS, COUNTING_KEYWORDS
+from typing import Tuple, List, Optional, Callable, Any
+from xavion.core.constants import MATH_PATTERNS, CODE_PATTERNS, COUNTING_KEYWORDS, TRANSLATE_PATTERNS
 
 class IntentDetector:
     """
@@ -49,6 +49,12 @@ class IntentDetector:
                 self._log(f"Code intent detected (pattern: {pattern})", icon="✅")
                 return "code", None
 
-        # 3. Default Intent
+        # 3. Translate Intent
+        for pattern in TRANSLATE_PATTERNS:
+            if re.search(pattern, text_lower):
+                self._log(f"Translate intent detected (pattern: {pattern})", icon="✅")
+                return "translate", None
+
+        # 4. Default Intent
         self._log("Default conversation intent.", icon="✅")
         return "default", None

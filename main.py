@@ -5,6 +5,7 @@ import time
 import os
 import signal
 import requests
+from xavion.core.constants import DEFAULT_MODEL
 
 def is_ollama_running():
     """Checks if the Ollama service is already running by checking the port or process."""
@@ -25,7 +26,7 @@ def check_for_models():
         pass
     return False
 
-def pull_model(model_name="llama3.1"):
+def pull_model(model_name=DEFAULT_MODEL):
     """Downloads a model from Ollama."""
     print(f"[*] Downloading model '{model_name}'... This may take a while.")
     try:
@@ -113,9 +114,9 @@ def main():
     # Check for models
     if not check_for_models():
         print("\n[!] No models found in your Ollama installation.")
-        choice = input("[?] Would you like to download 'llama3.1' now? (y/n): ").lower()
+        choice = input(f"[?] Would you like to download '{DEFAULT_MODEL}' now? (y/n): ").lower()
         if choice == 'y':
-            if not pull_model("llama3.1"):
+            if not pull_model(DEFAULT_MODEL):
                 print("[!] Cannot proceed without a model. Exiting.")
                 if ollama_process: stop_ollama(ollama_process)
                 sys.exit(1)

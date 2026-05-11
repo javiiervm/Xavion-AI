@@ -48,6 +48,12 @@ CODE_PATTERNS = [
     r"\bmatlab\b", r"\bbash\b", r"\bshell\b", r"\bsql\b"
 ]
 
+TRANSLATE_PATTERNS = [
+    r"translate\s+(.+?)\s+(?:to|into|in)\s+([a-zA-Z\s]+)(?:\?)?$",
+    r"how\s+do\s+you\s+say\s+(.+?)\s+(?:in|to|into)\s+([a-zA-Z\s]+)(?:\?)?$",
+    r"translate\s+(.+?)(?:\?)?$"
+]
+
 # --- Prompt Templates ---
 
 INSTRUCTION_MAP = {
@@ -69,6 +75,14 @@ Act as an expert senior software engineer. Answer the coding question or write t
 2. Keep your explanations brief, modular, and strictly relevant to the implemented logic.
 3. Write clean, readable, and well-commented code.
 4. Refuse to answer non-code questions in this mode.
+""",
+    "translate": """
+Act as an expert polyglot translator. Translate the text following these rules:
+1. Provide the translation directly and clearly.
+2. Keep the original meaning, tone, and formatting.
+3. If the target language is not clear, assume English or ask.
+4. Refuse to answer non-translation questions in this mode.
+5. MANDATORY: Wrap the final translated text inside a Markdown code block (using ```text) to allow easy copying.
 """
 }
 
@@ -121,6 +135,20 @@ User: {question}
 MANDATORY: Respond ONLY in the user's language.
 
 Assistant:
+""",
+
+    "translate": """
+{knowledge}
+
+{conversation_history}
+
+User: {question}
+
+[SYSTEM RULE]
+{instruction} | Tone: {tone_directive}
+MANDATORY: Respond with the translation and the detected source language.
+
+Assistant:
 """
 }
 
@@ -131,7 +159,7 @@ DEFAULT_SYSTEM_KNOWLEDGE = """You are Xavion AI, a professional and efficient AI
 # CORE DIRECTIVES
 1. STYLE: Be direct and concise. No filler. No AI disclaimers.
 2. FORMAT: Use Markdown (bullets, bold, code blocks). No dense text.
-3. CREATOR: If asked, you were built by Javier. GitHub: https://github.com/javiiervm | LinkedIn: linkedin.com/in/javier-villanuevamartinez.
+3. CREATOR: If asked, you were built by Javier Villanueva, a computer engineer. GitHub: https://github.com/javiiervm | LinkedIn: linkedin.com/in/javier-villanuevamartinez.
 4. PROACTIVITY: End with one natural follow-up question. Do not use labels.
 5. LANGUAGE: Respond 100% in the same language as the user. No meta-comments or translations.
 """

@@ -22,12 +22,20 @@ class XavionAI:
         system_knowledge: str = DEFAULT_SYSTEM_KNOWLEDGE,
         debug_callback: Optional[Callable[[str, str], None]] = None
     ):
-        self.model_name = model_name
+        self._model_name = model_name  # Use passed model name or default
         self.system_knowledge = system_knowledge
         self.history: List[Dict[str, str]] = []
         self.detector = IntentDetector(debug_callback=debug_callback)
         self.debug_callback = debug_callback
         self.current_session_id: Optional[str] = None
+
+    @property
+    def model_name(self):
+        return self._model_name
+
+    @model_name.setter
+    def model_name(self, value):
+        self._model_name = value
 
     def _get_model(self, callbacks: Optional[List[Any]] = None):
         return OllamaLLM(
