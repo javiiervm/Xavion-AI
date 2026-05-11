@@ -1,0 +1,180 @@
+{
+  "benchmark_suite": "Xavion_LLM_Stress_Test_v2",
+  "description": "Expanded comprehensive test suite for evaluating LLM reasoning, technical accuracy, and constraint adherence.",
+  "categories": [
+    {
+      "section": "Logical Reasoning and Common Sense",
+      "tests": [
+        {
+          "Q": "Sally has 3 brothers. Each of her brothers has 2 sisters. How many sisters does Sally have?",
+          "S": "1 sister. (Sally is one of the 2 sisters, so only one other sister exists)."
+        },
+        {
+          "Q": "I have a 12-liter jug and a 6-liter jug. I need to measure exactly 3 liters of water. How can I do this using only these two jugs?",
+          "S": "Impossible. Both jugs are multiples of 6; any combination of pouring will result in a multiple of 6. The model must explicitly state it is impossible."
+        },
+        {
+          "Q": "If it takes 5 machines 5 minutes to make 5 widgets, how long would it take 100 machines to make 100 widgets?",
+          "S": "5 minutes. Each machine produces 1 widget every 5 minutes."
+        },
+        {
+          "Q": "A bat and a ball cost $1.10 in total. The bat costs $1.00 more than the ball. How much does the ball cost?",
+          "S": "0.05 dollars (5 cents). The model must avoid the 10-cent trap."
+        },
+        {
+          "Q": "If you are running a race and you pass the person in second place, what place are you in?",
+          "S": "Second place. You took the spot of the person who was second."
+        },
+        {
+          "Q": "Which is heavier: 1 kilogram of gold or 1 kilogram of feathers? Explain the role of buoyancy in a real-world atmosphere.",
+          "S": "Both have the same mass (1kg), but in a real atmosphere, the feathers occupy more volume and experience more buoyancy, making them feel slightly 'lighter' on a scale, or the gold 'heavier'. The model should address both the mass equivalence and the physical nuance."
+        }
+      ]
+    },
+    {
+      "section": "Creativity and Strict Constraints",
+      "tests": [
+        {
+          "Q": "Explain quantum entanglement using only one-syllable words.",
+          "S": "Conceptually accurate explanation using only one-syllable words. No exceptions."
+        },
+        {
+          "Q": "Write a short story about a detective solving a crime, but do not use the letter 'e' anywhere.",
+          "S": "Lipogram: Zero occurrences of the letter 'e'. Coherent narrative."
+        },
+        {
+          "Q": "Write a haiku about AI where the first letter of each line spells 'BOT'.",
+          "S": "Acrostic: Lines start with B, O, T. Syllable structure: 5-7-5."
+        },
+        {
+          "Q": "Describe a sunset using exactly 20 words. No more, no less.",
+          "S": "Strict word count: Exactly 20 words total."
+        },
+        {
+          "Q": "Write a poem about a lonely robot using only words that start with the letter 'S'.",
+          "S": "Alliterative constraint: Every single word must start with 'S'."
+        },
+        {
+          "Q": "Summarize the plot of Inception, but every sentence must rhyme with the word 'dream'.",
+          "S": "Constraint: Every sentence in the summary must end with a word that rhymes with 'dream' (e.g., scheme, team, gleam, stream)."
+        }
+      ]
+    },
+    {
+      "section": "Programming and Technical Reasoning",
+      "tests": [
+        {
+          "Q": "Write a Python script to find the longest palindromic substring in O(n) time.",
+          "S": "Implementation of Manacher's Algorithm. O(n^2) solutions fail."
+        },
+        {
+          "Q": "Identify race conditions in this snippet: std::thread t(func, &res); t.join(); cout << res;",
+          "S": "Must state NO race conditions exist because of the join() before access."
+        },
+        {
+          "Q": "SQL: Find the second highest salary without LIMIT or TOP.",
+          "S": "Use nested MAX() or window functions (DENSE_RANK)."
+        },
+        {
+          "Q": "Explain the difference between a process and a thread in terms of memory sharing and context switching overhead.",
+          "S": "Accurate technical distinction: Processes have separate address spaces; threads share the process's memory. Processes have higher context switch overhead."
+        },
+        {
+          "Q": "Write a regular expression to validate an IPv4 address, ensuring octets are only 0-255.",
+          "S": "Regex must correctly handle ranges (e.g., ^((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.?\\b){4}$). Simply matching digits is insufficient."
+        },
+        {
+          "Q": "In React, why should you never update state directly (e.g., this.state.x = 1)?",
+          "S": "Must explain that direct mutation does not trigger a re-render and can lead to inconsistent UI state."
+        }
+      ]
+    },
+    {
+      "section": "Nuances, Ambiguity and Tone",
+      "tests": [
+        {
+          "Q": "Compare nihilism in Rick and Morty vs Bojack Horseman.",
+          "S": "Nuanced analysis of cosmic vs existential nihilism."
+        },
+        {
+          "Q": "Interpret 'I never said she stole my money' in three ways using emphasis.",
+          "S": "Demonstrate shift in meaning based on focus (I vs She vs Money)."
+        },
+        {
+          "Q": "Translate 'It's raining cats and dogs' to Spanish, providing both a literal and an idiomatic equivalent.",
+          "S": "Literal: 'Llueven gatos y perros'. Idiomatic: 'Llueve a cántaros' or 'Está lloviendo a mares'."
+        },
+        {
+          "Q": "Respond to the statement 'I just love working 80 hours a week' in a highly sarcastic tone.",
+          "S": "Must detect the implicit sarcasm and respond with a matching sarcastic/witty tone while acknowledging the exhaustion."
+        },
+        {
+          "Q": "Is the following statement an opinion or a fact? 'The Godfather is the greatest movie ever made.' Explain why.",
+          "S": "Identify as an opinion. Explain that 'greatest' is subjective and lacks a universal metric for proof."
+        },
+        {
+          "Q": "Explain the 'Ship of Theseus' paradox and its implications for personal identity.",
+          "S": "Accurate summary of the philosophical paradox regarding whether an object that has had all its components replaced remains fundamentally the same."
+        }
+      ]
+    },
+    {
+      "section": "Hallucinations and False Premises",
+      "tests": [
+        {
+          "Q": "Who won the Super Bowl in 1925?",
+          "S": "Correct the user: Super Bowl didn't exist until 1967."
+        },
+        {
+          "Q": "What was the name of the first astronaut to walk on Mars?",
+          "S": "Refuse premise: No human has walked on Mars yet."
+        },
+        {
+          "Q": "Explain how snakes chew their food.",
+          "S": "Correct the user: Snakes swallow food whole; they do not chew."
+        },
+        {
+          "Q": "In what year did George Washington invent the internet?",
+          "S": "Correct the false premise: George Washington died long before the internet was invented."
+        },
+        {
+          "Q": "Describe the 13th planet in our solar system.",
+          "S": "Identify that there are only 8 planets (or 5 dwarf planets recognized). No 13th planet exists."
+        },
+        {
+          "Q": "Which part of the human brain is responsible for breathing underwater?",
+          "S": "Refuse premise: Humans cannot breathe underwater; no part of the brain enables this."
+        }
+      ]
+    },
+    {
+      "section": "General Knowledge (Control Group)",
+      "tests": [
+        {
+          "Q": "What is the speed of light in a vacuum (exact m/s)?",
+          "S": "299,792,458 m/s"
+        },
+        {
+          "Q": "What does HTTP 418 mean?",
+          "S": "I'm a teapot (RFC 2324)."
+        },
+        {
+          "Q": "Atomic number and symbol of Tungsten?",
+          "S": "74, W"
+        },
+        {
+          "Q": "What is the capital of Kazakhstan?",
+          "S": "Astana (formerly Nur-Sultan)."
+        },
+        {
+          "Q": "Who wrote 'The Sorrows of Young Werther'?",
+          "S": "Johann Wolfgang von Goethe."
+        },
+        {
+          "Q": "What is the largest moon of Saturn?",
+          "S": "Titan."
+        }
+      ]
+    }
+  ]
+}
