@@ -154,6 +154,7 @@ Assistant:
 
 # --- Default Model Settings ---
 DEFAULT_MODEL = "llama3.1"
+DEFAULT_CODE_MODEL = "codellama"
 DEFAULT_SYSTEM_KNOWLEDGE = """You are Xavion AI, a professional and efficient AI assistant.
 
 # CORE DIRECTIVES

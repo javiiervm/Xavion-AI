@@ -25,6 +25,8 @@ from rich.panel import Panel
 from rich.text import Text
 import rich.box
 
+from xavion.core.constants import DEFAULT_CODE_MODEL
+
 
 # ==========================================
 # COLOR PALETTE CONFIGURATION (NEUTRAL SPARK)
@@ -66,6 +68,7 @@ class XavionCLI:
         self.input_history = InMemoryHistory()
         self.last_models = []
         self.last_sessions = []
+        self.pre_code_model = None
 
     def _status_info(self) -> str:
         """Generates the bottom status string containing the current working directory, mode, and model."""
@@ -407,8 +410,31 @@ class XavionCLI:
             if len(cmd_parts) > 1:
                 new_mode = cmd_parts[1].strip()
                 if new_mode in ["auto", "default", "math", "code", "translate"]:
+                    old_mode = self.intent_mode
                     self.intent_mode = new_mode
                     self.console.print(f"[dim {COLOR_ACCENT}]i[/] Mode switched to: {new_mode}")
+
+                    # --- Automatic Model Switch Logic ---
+                    # 1. Entering 'code' mode from another mode
+                    if new_mode == "code" and old_mode != "code":
+                        available_models = self.ai.list_available_models()
+                        
+                        # Only switch if not already using it
+                        if self.ai.model_name != DEFAULT_CODE_MODEL:
+                            if any(m == DEFAULT_CODE_MODEL or m.startswith(DEFAULT_CODE_MODEL + ":") for m in available_models):
+                                self.pre_code_model = self.ai.model_name
+                                self.ai.model_name = DEFAULT_CODE_MODEL
+                                self.console.print(f"[dim {COLOR_ACCENT}]i[/] Model automatically switched to: [bold {COLOR_SECONDARY}]{DEFAULT_CODE_MODEL}[/]")
+                            else:
+                                self.console.print(f"[dim {COLOR_ACCENT}]i Note: [bold]{DEFAULT_CODE_MODEL}[/bold] is not installed. Recommended for code mode.[/]")
+                                self.console.print(f"[dim {COLOR_ACCENT}]  Run: [/][bold]ollama pull {DEFAULT_CODE_MODEL}[/bold]")
+
+                    # 2. Exiting 'code' mode
+                    elif old_mode == "code" and new_mode != "code":
+                        if self.pre_code_model:
+                            self.ai.model_name = self.pre_code_model
+                            self.console.print(f"[dim {COLOR_ACCENT}]i[/] Model restored to: [bold {COLOR_SECONDARY}]{self.pre_code_model}[/]")
+                            self.pre_code_model = None
                 else:
                     self.console.print(f"[bold {COLOR_ERROR}]![/] Invalid mode. Available: auto, default, math, code, translate")
             else:
