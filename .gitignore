@@ -1,103 +1,37 @@
-# =========================
-# Virtual Environments
-# =========================
-.env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
-/site-packages/
-
-# =========================
-# Cache and Compiled Files
-# =========================
+# Python
 __pycache__/
 *.py[cod]
-*$py.class
-
-# =========================
-# Distribution and Packaging
-# =========================
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-share/python-wheels/
 *.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-
-# =========================
-# Tests and Coverage Reports
-# =========================
-htmlcov/
-.tox/
-.nox/
+build/
+dist/
+.pytest_cache/
 .coverage
 .coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.py,cover
-.hypothesis/
-.pytest_cache/
-cover/
+htmlcov/
 
-# =========================
-# Jupyter Notebook Checkpoints
-# =========================
-.ipynb_checkpoints
+# Virtual environments
+.venv/
+venv/
+env/
 
-# =========================
-# IDE and Editor Files
-# =========================
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Editors
 .idea/
 .vscode/
 *.swp
 *.swo
 *~
 
-# =========================
-# Database Files
-# =========================
-*.log
-db.sqlite3
-db.sqlite3-journal
-
-# =========================
-# Environment Variables
-# =========================
-.env
-.env.local
-.env.*.local
-
-# =========================
-# OS Generated Files
-# =========================
+# Operating system files
 .DS_Store
-.DS_Store?
 ._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-ehthumbs_vista.db
-[Tt]humbs.db
-[Dd]esktop.ini
+Thumbs.db
+Desktop.ini
 
-# =========================
-# Documentation and Miscellaneous
-# =========================
-GEMINI.md
-data/*
+# Runtime data
+data/
+*.log

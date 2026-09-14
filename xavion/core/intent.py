@@ -1,12 +1,20 @@
 import re
-from typing import Tuple, List, Optional, Callable, Any
-from xavion.core.constants import MATH_PATTERNS, CODE_PATTERNS, COUNTING_KEYWORDS, TRANSLATE_PATTERNS
+from typing import Any, Callable, List, Optional, Tuple
+
+from xavion.core.constants import (
+    CODE_PATTERNS,
+    COUNTING_KEYWORDS,
+    MATH_PATTERNS,
+    TRANSLATE_PATTERNS,
+)
+
 
 class IntentDetector:
-    """
-    Handles detection of user intent based on input text.
-    """
-    def __init__(self, debug_callback: Optional[Callable[[str, str], None]] = None):
+    """Detect user intent from input text."""
+
+    def __init__(
+        self, debug_callback: Optional[Callable[[str, str], None]] = None
+    ):
         self.debug_callback = debug_callback
 
     def _log(self, message: str, icon: str = "🔍"):
@@ -17,44 +25,43 @@ class IntentDetector:
         text = text.lower().strip()
         found = []
 
-        self._log(f"Scanning for math expressions...", icon="🔎")
+        self._log("Scanning for math expressions...", icon="🔎")
 
         for pattern in MATH_PATTERNS:
             for match in re.finditer(pattern, text):
                 expression = match.group(1).strip()
-                # Validate it's not just a plain word
-                if re.search(r"[+\-*/^%]", expression) or re.search(r"\b(sqrt|log|ln|sin|cos|tan|pi|e)\b", expression):
+                if re.search(r"[+\-*/^%]", expression) or re.search(
+                    r"\b(sqrt|log|ln|sin|cos|tan|pi|e)\b", expression
+                ):
                     found.append(expression)
 
-        if not found:
-            # Check for counting keywords
-            if re.search(r"\d+", text) and any(re.search(kw, text) for kw in COUNTING_KEYWORDS):
-                self._log("Detected counting-style math problem.", icon="✅")
-                found.append(text)
+        if not found and re.search(r"\d+", text) and any(
+            re.search(keyword, text) for keyword in COUNTING_KEYWORDS
+        ):
+            self._log("Detected counting-style math problem.", icon="✅")
+            found.append(text)
 
         return found
 
     def get_intent(self, text: str) -> Tuple[str, Optional[Any]]:
         text_lower = text.lower()
 
-        # 1. Math Intent
-        math_expr = self.detect_math_expressions(text)
-        if math_expr:
-            self._log(f"Math intent detected: {math_expr}", icon="✅")
-            return "math", math_expr
+        math_expressions = self.detect_math_expressions(text)
+        if math_expressions:
+            self._log(f"Math intent detected: {math_expressions}", icon="✅")
+            return "math", math_expressions
 
-        # 2. Code Intent
         for pattern in CODE_PATTERNS:
             if re.search(pattern, text_lower):
                 self._log(f"Code intent detected (pattern: {pattern})", icon="✅")
                 return "code", None
 
-        # 3. Translate Intent
         for pattern in TRANSLATE_PATTERNS:
             if re.search(pattern, text_lower):
-                self._log(f"Translate intent detected (pattern: {pattern})", icon="✅")
+                self._log(
+                    f"Translate intent detected (pattern: {pattern})", icon="✅"
+                )
                 return "translate", None
 
-        # 4. Default Intent
         self._log("Default conversation intent.", icon="✅")
         return "default", None

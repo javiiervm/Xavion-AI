@@ -1,6 +1,6 @@
 {
   "benchmark_suite": "Xavion_LLM_Stress_Test_v2",
-  "description": "Expanded comprehensive test suite for evaluating LLM reasoning, technical accuracy, and constraint adherence.",
+  "description": "Stress test suite for evaluating LLM reasoning, technical accuracy, and instruction following.",
   "categories": [
     {
       "section": "Logical Reasoning and Common Sense",

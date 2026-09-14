@@ -1,20 +1,18 @@
-import re
-
-# --- Intent Detection Patterns ---
+# Intent detection patterns
 
 MATH_PATTERNS = [
     r"what(?:\s+is|'s)\s+([\d\s\+\-\*\/\(\)\^\%\.]+(?:\s*(sqrt|log|ln|sin|cos|tan|pi|e))*)(?:\?)?$",
     r"calculate\s+([\d\s\+\-\*\/\(\)\^\%\.]+(?:\s*(sqrt|log|ln|sin|cos|tan|pi|e))*)(?:\?)?$",
     r"compute\s+([\d\s\+\-\*\/\(\)\^\%\.]+(?:\s*(sqrt|log|ln|sin|cos|tan|pi|e))*)(?:\?)?$",
     r"solve\s+([\d\s\+\-\*\/\(\)\^\%\.]+(?:\s*(sqrt|log|ln|sin|cos|tan|pi|e))*)(?:\?)?$",
-    r"^([\d\s\+\-\*\/\(\)\^\%\.]*(?:sqrt|log|ln|sin|cos|tan|pi|e)[\d\s\+\-\*\/\(\)\^\%\.]*|[\d]+\s*[\+\-\*\/\^]\s*[\d\s\+\-\*\/\(\)\^\%\.]+)(?:\?)?$"
+    r"^([\d\s\+\-\*\/\(\)\^\%\.]*(?:sqrt|log|ln|sin|cos|tan|pi|e)[\d\s\+\-\*\/\(\)\^\%\.]*|[\d]+\s*[\+\-\*\/\^]\s*[\d\s\+\-\*\/\(\)\^\%\.]+)(?:\?)?$",
 ]
 
 COUNTING_KEYWORDS = [
     r"how\s+many",
     r"total",
     r"altogether",
-    r"in\s+total"
+    r"in\s+total",
 ]
 
 CODE_PATTERNS = [
@@ -41,25 +39,41 @@ CODE_PATTERNS = [
     r"runtime\s+error",
     r"help\s+me\s+(with|debug|write)\s+code",
     r"show\s+me\s+how\s+to\s+(?:write|create)",
-    # Language names (careful with short ones like "r")
-    r"\bpython\b", r"\bjava\b", r"\bc\+\+\b", r"\bc#\b", r"\bjavascript\b", 
-    r"\btypescript\b", r"\bruby\b", r"\bgo\b", r"\brust\b", r"\bphp\b", 
-    r"\bswift\b", r"\bkotlin\b", r"\bscala\b", r"\bperl\b", r"\bhaskell\b", 
-    r"\bmatlab\b", r"\bbash\b", r"\bshell\b", r"\bsql\b"
+    # Programming language names are matched as whole words.
+    r"\bpython\b",
+    r"\bjava\b",
+    r"\bc\+\+\b",
+    r"\bc#\b",
+    r"\bjavascript\b",
+    r"\btypescript\b",
+    r"\bruby\b",
+    r"\bgo\b",
+    r"\brust\b",
+    r"\bphp\b",
+    r"\bswift\b",
+    r"\bkotlin\b",
+    r"\bscala\b",
+    r"\bperl\b",
+    r"\bhaskell\b",
+    r"\bmatlab\b",
+    r"\bbash\b",
+    r"\bshell\b",
+    r"\bsql\b",
 ]
 
 TRANSLATE_PATTERNS = [
     r"translate\s+(.+?)\s+(?:to|into|in)\s+([a-zA-Z\s]+)(?:\?)?$",
     r"how\s+do\s+you\s+say\s+(.+?)\s+(?:in|to|into)\s+([a-zA-Z\s]+)(?:\?)?$",
-    r"translate\s+(.+?)(?:\?)?$"
+    r"translate\s+(.+?)(?:\?)?$",
 ]
 
-# --- Prompt Templates ---
+
+# Prompt configuration
 
 INSTRUCTION_MAP = {
     "default": """
-Respond naturally but rigorously, strictly following your CORE DIRECTIVES. 
-Address the user's query directly, concisely, and without unnecessary conversational filler. 
+Respond naturally but rigorously, strictly following your CORE DIRECTIVES.
+Address the user's query directly, concisely, and without unnecessary conversational filler.
 If the query is ambiguous, proactively ask for clarification.
 """,
     "math": """
@@ -83,14 +97,14 @@ Act as an expert polyglot translator. Translate the text following these rules:
 3. If the target language is not clear, assume English or ask.
 4. Refuse to answer non-translation questions in this mode.
 5. MANDATORY: Wrap the final translated text inside a Markdown code block (using ```text) to allow easy copying.
-"""
+""",
 }
 
 TONE_MAP = {
     "casual": "Be friendly, warm, and conversational. Talk like a helpful human colleague. Use natural, everyday language.",
     "formal": "Be highly professional, objective, and strictly formal. Avoid colloquialisms.",
     "sarcastic": "Be witty, slightly cynical, and mildly sarcastic, but still provide the correct and helpful answer.",
-    "concise": "Be brutally short and direct. Zero pleasantries. Give only the exact answer required."
+    "concise": "Be brutally short and direct. Zero pleasantries. Give only the exact answer required.",
 }
 
 TEMPLATES = {
@@ -107,7 +121,6 @@ MANDATORY: Detect the user's language and respond ONLY in that language. No bili
 
 Assistant:
 """,
-
     "math": """
 {knowledge}
 Math expressions: {expressions}
@@ -122,7 +135,6 @@ MANDATORY: Respond ONLY in the user's language.
 
 Assistant:
 """,
-
     "code": """
 {knowledge}
 
@@ -136,7 +148,6 @@ MANDATORY: Respond ONLY in the user's language.
 
 Assistant:
 """,
-
     "translate": """
 {knowledge}
 
@@ -149,10 +160,12 @@ User: {question}
 MANDATORY: Respond with the translation and the detected source language.
 
 Assistant:
-"""
+""",
 }
 
-# --- Default Model Settings ---
+
+# Default model configuration
+
 DEFAULT_MODEL = "llama3.1"
 DEFAULT_CODE_MODEL = "codellama"
 DEFAULT_SYSTEM_KNOWLEDGE = """You are Xavion AI, a professional and efficient AI assistant.
@@ -160,7 +173,7 @@ DEFAULT_SYSTEM_KNOWLEDGE = """You are Xavion AI, a professional and efficient AI
 # CORE DIRECTIVES
 1. STYLE: Be direct and concise. No filler. No AI disclaimers.
 2. FORMAT: Use Markdown (bullets, bold, code blocks). No dense text.
-3. CREATOR: If asked, you were built by Javier Villanueva, a computer engineer. GitHub: https://github.com/javiiervm | LinkedIn: linkedin.com/in/javier-villanuevamartinez.
+3. CREATOR: If asked, you were built by Javier Villanueva. GitHub: https://github.com/javiiervm | LinkedIn: linkedin.com/in/javier-villanuevamartinez.
 4. PROACTIVITY: End with one natural follow-up question. Do not use labels.
 5. LANGUAGE: Respond 100% in the same language as the user. No meta-comments or translations.
 """
