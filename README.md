@@ -75,7 +75,7 @@ This boundary is intended to support future web, desktop, and Quickshell clients
 
 - Python 3.10 or newer.
 - Ollama installed locally and available through the `ollama` command.
-- At least one Ollama model. Xavion currently defaults to `llama3.1`.
+- The default `llama3.1` model installed in Ollama. Other installed models can be selected at runtime from the CLI.
 
 The launcher can attempt to start Ollama automatically. The current lifecycle implementation is primarily designed for Unix-like systems; broader launcher portability is still a development task.
 

@@ -21,12 +21,17 @@ def is_ollama_running():
         return False
 
 
-def check_for_models():
-    """Return whether Ollama has at least one installed model."""
+def is_model_installed(model_name=DEFAULT_MODEL):
+    """Return whether the requested Ollama model is installed."""
     try:
         response = requests.get("http://localhost:11434/api/tags", timeout=2)
         if response.status_code == 200:
-            return len(response.json().get("models", [])) > 0
+            models = response.json().get("models", [])
+            return any(
+                model.get("name") == model_name
+                or model.get("name", "").startswith(f"{model_name}:")
+                for model in models
+            )
     except Exception:
         pass
     return False
@@ -118,19 +123,21 @@ def main():
     args = parser.parse_args()
     ollama_process = start_ollama()
 
-    if not check_for_models():
-        print("\n[!] No models found in your Ollama installation.")
+    if not is_model_installed(DEFAULT_MODEL):
+        print(f"\n[!] Default model '{DEFAULT_MODEL}' was not found.")
         choice = input(
             f"[?] Would you like to download '{DEFAULT_MODEL}' now? (y/n): "
         ).lower()
         if choice == "y":
             if not pull_model(DEFAULT_MODEL):
-                print("[!] Cannot proceed without a model. Exiting.")
+                print("[!] Cannot proceed without the default model. Exiting.")
                 if ollama_process:
                     stop_ollama(ollama_process)
                 sys.exit(1)
         else:
-            print("[!] A model is required to run Xavion AI. Exiting.")
+            print(
+                f"[!] Model '{DEFAULT_MODEL}' is required to start Xavion AI. Exiting."
+            )
             if ollama_process:
                 stop_ollama(ollama_process)
             sys.exit(1)

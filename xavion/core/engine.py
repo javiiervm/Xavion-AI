@@ -30,7 +30,7 @@ class XavionAI:
         self.system_knowledge = system_knowledge
         self.history: List[Dict[str, str]] = []
         self.detector = IntentDetector(debug_callback=debug_callback)
-        self.debug_callback = debug_callback
+        self._debug_callback = debug_callback
         self.current_session_id: Optional[str] = None
 
     @property
@@ -40,6 +40,15 @@ class XavionAI:
     @model_name.setter
     def model_name(self, value):
         self._model_name = value
+
+    @property
+    def debug_callback(self):
+        return self._debug_callback
+
+    @debug_callback.setter
+    def debug_callback(self, callback):
+        self._debug_callback = callback
+        self.detector.debug_callback = callback
 
     def _get_model(self, callbacks: Optional[List[Any]] = None):
         return OllamaLLM(
