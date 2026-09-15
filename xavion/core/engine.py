@@ -11,6 +11,7 @@ from xavion.core.constants import (
     DEFAULT_MODEL,
     DEFAULT_SYSTEM_KNOWLEDGE,
     INSTRUCTION_MAP,
+    OLLAMA_KEEP_ALIVE,
     TEMPLATES,
     TONE_MAP,
 )
@@ -56,6 +57,7 @@ class XavionAI:
             callbacks=callbacks,
             num_ctx=4096,
             num_predict=1024,
+            keep_alive=OLLAMA_KEEP_ALIVE,
         )
 
     def list_available_models(self) -> List[str]:

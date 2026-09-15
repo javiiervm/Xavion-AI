@@ -177,3 +177,6 @@ DEFAULT_SYSTEM_KNOWLEDGE = """You are Xavion AI, a professional and efficient AI
 4. PROACTIVITY: End with one natural follow-up question. Do not use labels.
 5. LANGUAGE: Respond 100% in the same language as the user. No meta-comments or translations.
 """
+
+# Keepalive time definition
+OLLAMA_KEEP_ALIVE="10s"
