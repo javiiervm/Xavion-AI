@@ -1,10 +1,13 @@
 <div align="center">
-  <img width="520" alt="Xavion AI logo" src="assets/logo_name.png" />
+  <img width="600" height="600" alt="Xavion AI logo" src="assets/logo_name.png" />
   <br />
   <p>
-    <img src="https://img.shields.io/badge/Python-3.10%2B-blue" alt="Python 3.10+" />
-    <img src="https://img.shields.io/badge/Inference-Ollama-black" alt="Ollama" />
-    <img src="https://img.shields.io/badge/branch-develop-orange" alt="Develop branch" />
+    <img src="https://img.shields.io/github/last-commit/javiiervm/Xavion-AI/develop" alt="Last Commit" />
+    <!-- <img src="https://img.shields.io/badge/platform-linux%20%7C%20windows%20%7C%20macos-lightgrey" alt="Platform Support" /> -->
+    <img src="https://img.shields.io/badge/python-3.10%2B-yellow" alt="Python Version" />
+    <img src="https://img.shields.io/badge/ollama-0.5.3-blue" alt="Ollama Version" />
+    <img src="https://img.shields.io/github/issues/javiiervm/Xavion-AI?branch=develop" alt="Issues" />
+    <img src="https://img.shields.io/github/stars/javiiervm/Xavion-AI?branch=develop" alt="Stars" />
   </p>
 </div>
 
