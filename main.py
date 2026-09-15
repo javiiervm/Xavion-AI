@@ -1,28 +1,158 @@
 import argparse
-from frontend_cli.workflow import start_chat
-from frontend_cli.ui import print_loading_message
-from frontend_web.server import start_server
+import os
+import signal
+import subprocess
+import sys
+import time
+
+import requests
+
+from xavion.core.constants import DEFAULT_MODEL
+
+
+def is_ollama_running():
+    """Return whether the local Ollama service is accepting connections."""
+    try:
+        import socket
+
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            return sock.connect_ex(("localhost", 11434)) == 0
+    except Exception:
+        return False
+
+
+def is_model_installed(model_name=DEFAULT_MODEL):
+    """Return whether the requested Ollama model is installed."""
+    try:
+        response = requests.get("http://localhost:11434/api/tags", timeout=2)
+        if response.status_code == 200:
+            models = response.json().get("models", [])
+            return any(
+                model.get("name") == model_name
+                or model.get("name", "").startswith(f"{model_name}:")
+                for model in models
+            )
+    except Exception:
+        pass
+    return False
+
+
+def pull_model(model_name=DEFAULT_MODEL):
+    """Download a model through the Ollama CLI."""
+    print(f"[*] Downloading model '{model_name}'... This may take a while.")
+    try:
+        subprocess.run(["ollama", "pull", model_name], check=True)
+        print(f"[+] Model '{model_name}' downloaded successfully.")
+        return True
+    except Exception as exc:
+        print(f"[!] Failed to download model: {exc}")
+        return False
+
+
+def start_ollama():
+    """Start the Ollama server when it is not already running."""
+    if is_ollama_running():
+        return None
+
+    print("[*] Starting Ollama service...")
+    try:
+        process = subprocess.Popen(
+            ["ollama", "serve"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            preexec_fn=os.setsid,
+        )
+
+        max_retries = 5
+        for attempt in range(max_retries):
+            time.sleep(1)
+            if is_ollama_running():
+                print("[+] Ollama service started successfully.")
+                return process
+            print(f"    Waiting for Ollama... ({attempt + 1}/{max_retries})")
+
+        return process
+    except FileNotFoundError:
+        print("[!] Error: 'ollama' command not found. Please install Ollama.")
+        sys.exit(1)
+    except Exception as exc:
+        print(f"[!] Failed to start Ollama: {exc}")
+        return None
+
+
+def stop_ollama(process):
+    """Stop an Ollama process started by Xavion."""
+    if process:
+        print("\n[*] Stopping Ollama service...")
+        try:
+            os.killpg(os.getpgid(process.pid), signal.SIGTERM)
+            process.wait(timeout=5)
+            print("[+] Ollama service stopped.")
+        except Exception as exc:
+            print(f"[!] Error stopping Ollama: {exc}")
+
+
+def run_interface(interface_name, debug=False, port=8000):
+    """Load the requested frontend interface."""
+    if interface_name == "cli":
+        from xavion.interfaces.cli.app import run_cli
+
+        run_cli(debug=debug)
+    elif interface_name == "web":
+        print("[!] Web interface is not implemented yet.")
+    elif interface_name == "desktop":
+        print("[!] Desktop interface is not implemented yet.")
+    else:
+        print(f"[!] Unknown interface: {interface_name}")
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Xavion AI local assistant")
+    parser.add_argument(
+        "interface",
+        choices=["cli", "web", "desktop"],
+        nargs="?",
+        default="cli",
+        help="Select the frontend interface (default: cli)",
+    )
+    parser.add_argument("--debug", action="store_true", help="Enable debug mode")
+    parser.add_argument(
+        "--port", type=int, default=8000, help="Port for web/API (default: 8000)"
+    )
+
+    args = parser.parse_args()
+    ollama_process = start_ollama()
+
+    if not is_model_installed(DEFAULT_MODEL):
+        print(f"\n[!] Default model '{DEFAULT_MODEL}' was not found.")
+        choice = input(
+            f"[?] Would you like to download '{DEFAULT_MODEL}' now? (y/n): "
+        ).lower()
+        if choice == "y":
+            if not pull_model(DEFAULT_MODEL):
+                print("[!] Cannot proceed without the default model. Exiting.")
+                if ollama_process:
+                    stop_ollama(ollama_process)
+                sys.exit(1)
+        else:
+            print(
+                f"[!] Model '{DEFAULT_MODEL}' is required to start Xavion AI. Exiting."
+            )
+            if ollama_process:
+                stop_ollama(ollama_process)
+            sys.exit(1)
+
+    try:
+        run_interface(args.interface, debug=args.debug, port=args.port)
+    except KeyboardInterrupt:
+        pass
+    except Exception as exc:
+        print(f"[!] Critical error during execution: {exc}")
+    finally:
+        if ollama_process:
+            stop_ollama(ollama_process)
+        print("\n[+] Xavion AI closed.\n")
+
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Xavion AI - Multi-frontend Assistant")
-    parser.add_argument("--cli", action="store_true", help="Start the Command Line Interface")
-    parser.add_argument("--web", action="store_true", help="Start the Web Interface")
-    parser.add_argument("--port", type=int, default=8000, help="Port for the web server (default: 8000)")
-    
-    args = parser.parse_args()
-
-    if args.cli:
-        print_loading_message()
-        debug_mode = False
-        chat_finished = False
-        intent_mode = "auto"
-        while not chat_finished:
-            chat_finished = start_chat(debug_mode, intent_mode)
-    elif args.web:
-        print(f"\n[+] Starting Xavion AI Web Interface on http://localhost:{args.port}")
-        start_server(port=args.port)
-    else:
-        print("\n[!] Please specify a frontend to start.")
-        print("    Usage:")
-        print("    - CLI: python main.py --cli")
-        print("    - Web: python main.py --web [--port 8000]\n")
+    main()

@@ -1,123 +1,170 @@
 <div align="center">
-  <img width="600" height="600" alt="Xavion AI logo" src="https://github.com/javiiervm/Xavion-AI/blob/main/assets/logo_full.png" />
+  <img width="500" height="500" alt="Xavion AI logo" src="assets/logo_name.png" />
   <br />
   <p>
     <img src="https://img.shields.io/github/last-commit/javiiervm/Xavion-AI/develop" alt="Last Commit" />
-    <img src="https://img.shields.io/badge/platform-linux%20%7C%20windows%20%7C%20macos-lightgrey" alt="Platform Support" />
-    <img src="https://img.shields.io/github/issues/javiiervm/Xavion-AI?branch=develop" alt="Issues" />
-    <img src="https://img.shields.io/github/stars/javiiervm/Xavion-AI?branch=develop" alt="Stars" />
-    <br />
+    <!-- <img src="https://img.shields.io/badge/platform-linux%20%7C%20windows%20%7C%20macos-lightgrey" alt="Platform Support" /> -->
     <img src="https://img.shields.io/badge/python-3.10%2B-yellow" alt="Python Version" />
     <img src="https://img.shields.io/badge/ollama-0.5.3-blue" alt="Ollama Version" />
-    <img src="https://img.shields.io/badge/langchain-0.3.27-green" alt="LangChain Version" />
-    <img src="https://img.shields.io/badge/fastapi-0.115.0-blue" alt="FastAPI Version" />
-    <img src="https://img.shields.io/badge/rich-13.7.0-magenta" alt="Rich Version" />
+    <img src="https://img.shields.io/badge/langchain-0.3.27-magenta" alt="LangChain Version" />
+    <img src="https://img.shields.io/github/issues/javiiervm/Xavion-AI?branch=develop" alt="Issues" />
+    <img src="https://img.shields.io/github/stars/javiiervm/Xavion-AI?branch=develop" alt="Stars" />
   </p>
-</div><br />
+</div>
 
-Xavion AI is a **local-first assistant** that runs entirely on your machine using **Ollama** for local inference and **LangChain** for robust orchestration, providing a seamless, low-latency experience. It features a dual-interface system: a high-fidelity **Terminal CLI** and a modern **Web Interface**, both powered by a shared, frontend-agnostic backend.
+Xavion AI is a local-first AI assistant built around a reusable Python backend. Local inference is provided by [Ollama](https://ollama.com/), while LangChain components handle prompt composition and model interaction. Its main architectural goal is to keep AI and conversation logic independent from presentation code so that multiple frontends can reuse the same backend.
 
-## Main Features
+## Current Status
 
-- **Privacy-First Offline Architecture**: Runs 100% locally on your machine. No API keys, no telemetry, no data leaks.
-- **Dual Interface Support**:
-  - **Terminal CLI**: Rich, interactive environment with gradient banners and syntax highlighting.
-  - **Web UI**: Modern, responsive interface built with Tailwind CSS and FastAPI, supporting real-time SSE streaming.
-- **Intelligent Intent Detection**: Automatically switches context between general conversation, mathematical computation, and software engineering tasks.
-- **Immersive UX**: Real-time streaming output, syntax-highlighted code blocks, and adaptive status feedback across both interfaces.
-- **Decoupled Backend**: Modular architecture that separates core AI logic from the UI, ensuring consistent behavior across different frontends.
+The terminal interface is currently the supported frontend. Web, desktop, and shell integrations are planned, but they are not implemented in this branch yet.
 
-## Project Architecture
+Current capabilities include:
+
+- Local LLM inference through Ollama.
+- Streaming responses.
+- Automatic intent routing for general, mathematical, programming, and translation requests.
+- Manual conversation modes and response tones.
+- Ollama model discovery and runtime model switching.
+- Optional CodeLlama switching while using code mode.
+- Persistent local conversation sessions stored as JSON.
+- Interactive terminal UI built with Rich and prompt-toolkit.
+- An LLM stress-test suite for reasoning, technical accuracy, and instruction following.
+
+## Architecture
 
 ```text
 Xavion-AI/
-├── backend/
-│   ├── core.py              # Main API entry point (Frontend-agnostic)
-│   ├── build_prompt.py      # Intent detection & prompt engineering
-│   ├── build_response.py    # Model orchestration via LangChain
-│   ├── auxiliar.py          # Math detection & general utilities
-│   └── key_variables.py     # Constants, patterns, and prompt templates
-├── frontend_cli/            # Terminal Interface
-│   ├── ui.py                # Rich terminal UI components
-│   └── workflow.py          # CLI-specific chat loop
-├── frontend_web/            # Web Interface
-│   ├── server.py            # FastAPI server & SSE streaming
-│   ├── static/              # CSS/JS assets (Tailwind)
-│   └── templates/           # Jinja2 HTML templates
-├── main.py                  # Multi-frontend dispatcher
-├── requirements.txt         # Dependency manifest
-└── README.md                # Documentation
+├── assets/
+│   └── logo_name.png
+├── test/
+│   ├── Xavion_LLM_Stress_Test.json
+│   └── stress_test.py
+├── xavion/
+│   ├── core/
+│   │   ├── constants.py
+│   │   ├── engine.py
+│   │   └── intent.py
+│   └── interfaces/
+│       └── cli/
+│           ├── app.py
+│           └── ui.py
+├── main.py
+├── requirements.txt
+└── README.md
 ```
 
-## Prerequisites
+The separation is intentional:
 
-- **Python 3.10+** (Recommended: 3.13)
-- **Ollama**: Ensure Ollama is installed and the background service is active.
-  - [Download Ollama](https://ollama.com/download)
-- **Model**: Pull the default model (or your preferred LLM):
-  ```bash
-  ollama pull llama3.1
-  ```
+- `xavion/core/` contains reusable assistant behavior and should not depend on a particular frontend.
+- `xavion/interfaces/` contains presentation and interaction code for each client.
+- `main.py` manages the local Ollama lifecycle and dispatches the selected interface.
+- `test/` contains the current model-level stress test.
 
-## Installation & Usage
+A frontend can consume the core directly without depending on terminal-specific code:
 
-### 1. Clone the Repository
+```python
+from xavion.core.engine import XavionAI
+
+assistant = XavionAI()
+
+for token in assistant.chat_stream("Hello, Xavion"):
+    print(token, end="", flush=True)
+```
+
+This boundary is intended to support future web, desktop, and Quickshell clients without duplicating backend behavior.
+
+## Requirements
+
+- Python 3.10 or newer.
+- Ollama installed locally and available through the `ollama` command.
+- The default `llama3.1` model installed in Ollama. Other installed models can be selected at runtime from the CLI.
+
+The launcher can attempt to start Ollama automatically. The current lifecycle implementation is primarily designed for Unix-like systems; broader launcher portability is still a development task.
+
+## Installation
+
+Clone the repository:
+
 ```bash
 git clone https://github.com/javiiervm/Xavion-AI.git
 cd Xavion-AI
 ```
 
-### 2. Setup Environment
-It is highly recommended to use a virtual environment:
-```bash
-# Windows
-python -m venv .venv
-.\.venv\Scripts\activate
+Create and activate a virtual environment:
 
-# Linux/macOS
+```bash
 python -m venv .venv
 source .venv/bin/activate
 ```
 
-### 3. Install Dependencies
+On Windows PowerShell, activate it with:
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+```
+
+Install the Python dependencies:
+
 ```bash
 pip install -r requirements.txt
 ```
 
-### 4. Launch Ollama
-Ensure the Ollama service is running:
+Pull the default model if it is not already installed:
+
 ```bash
-ollama serve
+ollama pull llama3.1
 ```
 
-### 5. Launch Xavion AI
-Choose your preferred interface:
+## Running Xavion
 
-**Terminal CLI:**
+Launch the terminal interface with:
+
 ```bash
-python main.py --cli
+python main.py cli
 ```
 
-**Web Interface:**
+Because CLI is the default interface, this also works:
+
 ```bash
-python main.py --web [--port 8000]
+python main.py
 ```
 
-## Command Interface (CLI)
+Enable diagnostic output with:
 
-Xavion AI supports several internal commands in the terminal:
+```bash
+python main.py cli --debug
+```
 
-| Command | Action |
-| :--- | :--- |
-| `/help` | Displays the help panel with all available commands. |
-| `/mode:<type>` | Manually switch between `auto`, `math`, `code`, or `default`. |
-| `/debug` | Toggles detailed diagnostic logs. |
-| `reset` | Clears the current conversation history. |
-| `/exit` | Gracefully terminates the session. |
+## CLI Commands
 
-## Troubleshooting
+| Command | Description |
+| --- | --- |
+| `/new` | Start a new conversation session. |
+| `/reset` | Clear the current conversation history. |
+| `/sessions` | List saved conversations. |
+| `/load:<id/idx>` | Load a saved session by ID or displayed index. |
+| `/models` | List installed Ollama models. |
+| `/model:<name/idx>` | Switch the active model. |
+| `/mode:<name>` | Select `auto`, `default`, `math`, `code`, or `translate`. |
+| `/tone:<name>` | Select `casual`, `formal`, `sarcastic`, or `concise`. |
+| `/copy` | Copy the last code block from the previous response. |
+| `/copy:<n>` | Copy a specific code block. |
+| `/debug` | Toggle debug output. |
+| `/help` | Display the command reference. |
+| `/exit` | Close the application. |
 
-- **Connection Refused**: Verify that `ollama serve` is running in your terminal or as a background service.
-- **Model Not Found**: Ensure you have pulled the model specified in the configuration (default: `llama3.1`).
-- **Web Interface Not Loading**: Check if the port (default 8000) is already in use by another application.
-- **ANSI Color Issues (CLI)**: Ensure your terminal emulator supports 24-bit color (TrueColor).
+## Stress Test
+
+The repository includes a lightweight benchmark for comparing Xavion's behavior across reasoning, programming, ambiguity, hallucination resistance, general knowledge, and strict instruction-following tasks.
+
+Run it from the repository root:
+
+```bash
+python test/stress_test.py
+```
+
+The benchmark is intended as a development signal, not as a production-readiness certification.
+
+## Development Direction
+
+`develop` is intentionally focused on establishing a clean, frontend-agnostic foundation before additional interfaces and advanced assistant capabilities are added. New frontends should reuse `xavion/core/` rather than reimplement conversation, model, or session behavior.
