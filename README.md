@@ -1,5 +1,5 @@
 <div align="center">
-  <img width="500" height="500" alt="Xavion AI logo" src="assets/logo_name.png" />
+  <img width="600" height="600" alt="Xavion AI logo" src="assets/logo_name.png" />
   <br />
   <p>
     <img src="https://img.shields.io/github/last-commit/javiiervm/Xavion-AI/dev" alt="Last Commit" />
