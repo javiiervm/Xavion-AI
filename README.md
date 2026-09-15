@@ -6,14 +6,13 @@
     <!-- <img src="https://img.shields.io/badge/platform-linux%20%7C%20windows%20%7C%20macos-lightgrey" alt="Platform Support" /> -->
     <img src="https://img.shields.io/badge/python-3.10%2B-yellow" alt="Python Version" />
     <img src="https://img.shields.io/badge/ollama-0.5.3-blue" alt="Ollama Version" />
+    <img src="https://img.shields.io/badge/langchain-0.3.27-magenta" alt="LangChain Version" />
     <img src="https://img.shields.io/github/issues/javiiervm/Xavion-AI?branch=develop" alt="Issues" />
     <img src="https://img.shields.io/github/stars/javiiervm/Xavion-AI?branch=develop" alt="Stars" />
   </p>
 </div>
 
-Xavion AI is a local-first AI assistant built around a reusable Python backend. Local inference is provided by [Ollama](https://ollama.com/), while LangChain components handle prompt composition and model interaction.
-
-The `develop` branch is the active rewrite of Xavion. Its main architectural goal is to keep AI and conversation logic independent from presentation code so that multiple frontends can reuse the same backend.
+Xavion AI is a local-first AI assistant built around a reusable Python backend. Local inference is provided by [Ollama](https://ollama.com/), while LangChain components handle prompt composition and model interaction. Its main architectural goal is to keep AI and conversation logic independent from presentation code so that multiple frontends can reuse the same backend.
 
 ## Current Status
 
@@ -84,10 +83,10 @@ The launcher can attempt to start Ollama automatically. The current lifecycle im
 
 ## Installation
 
-Clone the active development branch:
+Clone the repository:
 
 ```bash
-git clone --branch develop https://github.com/javiiervm/Xavion-AI.git
+git clone https://github.com/javiiervm/Xavion-AI.git
 cd Xavion-AI
 ```
 
