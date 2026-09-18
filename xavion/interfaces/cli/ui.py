@@ -23,6 +23,7 @@ from rich.table import Table
 from rich.text import Text
 
 from xavion.core.constants import DEFAULT_CODE_MODEL
+from xavion.version import DISPLAY_NAME, VERSION
 
 COLOR_SECONDARY = "#FFFFFF"
 COLOR_ACCENT = "#A0A0A0"
@@ -52,7 +53,7 @@ class XavionCLI:
         self.ai = ai
         self.debug_mode = debug
         self.intent_mode = "auto"
-        self.tone_mode = "casual"
+        self.tone_mode = "adaptive"
         self.console = Console()
         self.last_code_blocks = []
         self.input_history = InMemoryHistory()
@@ -81,7 +82,7 @@ class XavionCLI:
             "   [bold #CC5500]▀▀[/][bold #D49A36]▀[/][bold #FFFFFF]▀[/][bold #D49A36]▀[/][bold #CC5500]▀▀[/]   \n"
         )
         info = (
-            f"\nXavion Spark CLI [bold {COLOR_SECONDARY}]v26.05[/]\n\n"
+            f"\n{DISPLAY_NAME} CLI [bold {COLOR_SECONDARY}]v{VERSION}[/]\n\n"
             f"Model:  {self.ai.model_name} [bold {COLOR_ACCENT}]/model[/]\n"
             f"Mode:   {self.intent_mode} [bold {COLOR_ACCENT}]/mode[/]"
         )
@@ -279,7 +280,7 @@ class XavionCLI:
 - `/models` - List installed models
 - `/model:<name/idx>` - Switch model
 - `/mode:<name>` - Select auto, default, math, code, or translate
-- `/tone:<name>` - Select casual, formal, sarcastic, or concise
+- `/tone:<name>` - Select adaptive, casual, formal, sarcastic, or concise
 """
             )
         )
@@ -384,7 +385,7 @@ class XavionCLI:
             self.pre_code_model = None
 
     def _select_tone(self, parts):
-        tones = ["casual", "formal", "sarcastic", "concise"]
+        tones = ["adaptive", "casual", "formal", "sarcastic", "concise"]
         if len(parts) == 1:
             self._info(f"Available tones: {', '.join(tones)}")
             return

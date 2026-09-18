@@ -4,15 +4,14 @@ import time
 from typing import Any, Callable, Dict, Generator, List, Optional
 
 import requests
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_ollama import OllamaLLM
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from langchain_ollama import ChatOllama
 
 from xavion.core.constants import (
     DEFAULT_MODEL,
     DEFAULT_SYSTEM_KNOWLEDGE,
     INSTRUCTION_MAP,
     OLLAMA_KEEP_ALIVE,
-    TEMPLATES,
     TONE_MAP,
 )
 from xavion.core.intent import IntentDetector
@@ -52,12 +51,13 @@ class XavionAI:
         self.detector.debug_callback = callback
 
     def _get_model(self, callbacks: Optional[List[Any]] = None):
-        return OllamaLLM(
+        return ChatOllama(
             model=self.model_name,
             callbacks=callbacks,
             num_ctx=4096,
             num_predict=1024,
             keep_alive=OLLAMA_KEEP_ALIVE,
+            temperature=0.6,
         )
 
     def list_available_models(self) -> List[str]:
@@ -70,59 +70,52 @@ class XavionAI:
         except Exception:
             return []
 
-    def _format_history(self) -> str:
-        formatted = ""
-        for entry in self.history:
-            formatted += f"User: {entry['user']}\nAI: {entry['assistant']}\n"
-        return formatted
-
-    def _prepare_chain(
+    def _prepare_messages(
         self,
         message: str,
         intent_mode: str = "auto",
-        tone_mode: str = "casual",
+        tone_mode: str = "adaptive",
     ):
         if intent_mode == "auto":
-            intent, keywords = self.detector.get_intent(message)
+            intent, _ = self.detector.get_intent(message)
         else:
             intent = intent_mode
-            keywords = (
-                self.detector.detect_math_expressions(message)
-                if intent == "math"
-                else None
-            )
 
         instruction = INSTRUCTION_MAP.get(intent, INSTRUCTION_MAP["default"])
-        template = TEMPLATES.get(intent, TEMPLATES["default"])
-        params = {
-            "instruction": instruction,
-            "conversation_history": self._format_history(),
-            "question": message,
-            "knowledge": self.system_knowledge,
-            "tone_directive": TONE_MAP.get(tone_mode, TONE_MAP["casual"]),
-        }
+        tone_directive = TONE_MAP.get(tone_mode, TONE_MAP["adaptive"])
 
-        if intent == "math":
-            params["expressions"] = ", ".join(keywords) if keywords else "N/A"
+        system_parts = [self.system_knowledge.strip()]
+        if instruction.strip():
+            system_parts.append(instruction.strip())
+        if tone_directive.strip():
+            system_parts.append(tone_directive.strip())
 
-        prompt = ChatPromptTemplate.from_template(template)
-        return prompt, params, intent
+        messages = [SystemMessage(content="\n\n".join(system_parts))]
+
+        for entry in self.history:
+            messages.append(HumanMessage(content=entry["user"]))
+            messages.append(AIMessage(content=entry["assistant"]))
+
+        messages.append(HumanMessage(content=message))
+        return messages, intent
 
     def chat_stream(
         self,
         message: str,
         intent_mode: str = "auto",
-        tone_mode: str = "casual",
+        tone_mode: str = "adaptive",
     ) -> Generator[str, None, None]:
-        prompt, params, _ = self._prepare_chain(message, intent_mode, tone_mode)
+        messages, _ = self._prepare_messages(message, intent_mode, tone_mode)
         model = self._get_model()
-        chain = prompt | model
 
         full_response = ""
         try:
-            for chunk in chain.stream(params):
-                full_response += chunk
-                yield chunk
+            for chunk in model.stream(messages):
+                text = chunk.content
+                if not isinstance(text, str):
+                    text = str(text)
+                full_response += text
+                yield text
         except Exception as exc:
             if "404" in str(exc) and self.model_name in str(exc):
                 available = self.list_available_models()

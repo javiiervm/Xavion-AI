@@ -1,0 +1,1 @@
+"""Quickshell integration for Xavion."""
