@@ -32,7 +32,7 @@ def handle_command(ai: XavionAI, command: dict[str, Any]) -> None:
             return
 
         intent_mode = str(command.get("intent_mode", "auto"))
-        tone_mode = str(command.get("tone_mode", "casual"))
+        tone_mode = str(command.get("tone_mode", "adaptive"))
 
         emit("start")
 

@@ -146,7 +146,7 @@ python main.py cli --debug
 | `/models` | List installed Ollama models. |
 | `/model:<name/idx>` | Switch the active model. |
 | `/mode:<name>` | Select `auto`, `default`, `math`, `code`, or `translate`. |
-| `/tone:<name>` | Select `casual`, `formal`, `sarcastic`, or `concise`. |
+| `/tone:<name>` | Select `adaptive`, `casual`, `formal`, `sarcastic`, or `concise`. |
 | `/copy` | Copy the last code block from the previous response. |
 | `/copy:<n>` | Copy a specific code block. |
 | `/debug` | Toggle debug output. |
