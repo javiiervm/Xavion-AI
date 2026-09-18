@@ -150,4 +150,4 @@ LinkedIn: linkedin.com/in/javier-villanuevamartinez
 
 
 # Keepalive time definition
-OLLAMA_KEEP_ALIVE="10s"
+OLLAMA_KEEP_ALIVE = "10s"

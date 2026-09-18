@@ -167,7 +167,9 @@ The Quickshell integration uses a small backend bridge rather than terminal-spec
 python -m xavion.interfaces.quickshell.bridge
 ```
 
-The bridge reads newline-delimited JSON commands from standard input and emits newline-delimited JSON events on standard output. It supports chat streaming, new sessions, history resets, and health checks. The initial `ready` event also exposes the current release name, version, display name, and active model so a Quickshell frontend can display them without hardcoding release metadata.
+The bridge reads newline-delimited JSON commands from standard input and emits newline-delimited JSON events on standard output. It supports chat streaming, new sessions, history resets, health checks, model discovery, and runtime model switching. The initial `ready` event exposes the current release name, version, display name, active model, and installed models so a Quickshell frontend can initialize without hardcoding release metadata.
+
+Supported model-control commands are `list_models` and `set_model`. The bridge reports model state through the `models` and `model_changed` events.
 
 ## CLI Commands
 
