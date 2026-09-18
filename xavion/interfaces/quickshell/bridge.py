@@ -9,7 +9,7 @@ from xavion.version import DISPLAY_NAME, NAME, VERSION
 
 
 def emit(event_type: str, **payload: Any) -> None:
-    """Write one newline-delimited JSON event for the Quickshell frontend."""
+    """Write one newline-delimited JSON event for Quickshell."""
     print(
         json.dumps(
             {
@@ -63,6 +63,44 @@ def handle_command(ai: XavionAI, command: dict[str, Any]) -> None:
         emit("reset_done")
         return
 
+    if command_type == "list_models":
+        emit(
+            "models",
+            models=ai.list_available_models(),
+            active_model=ai.model_name,
+        )
+        return
+
+    if command_type == "set_model":
+        requested = str(command.get("model", "")).strip()
+
+        if not requested:
+            emit("error", message="Model name cannot be empty.")
+            return
+
+        models = ai.list_available_models()
+
+        if requested not in models:
+            emit(
+                "error",
+                message=f"Model '{requested}' is not installed.",
+            )
+            emit(
+                "models",
+                models=models,
+                active_model=ai.model_name,
+            )
+            return
+
+        ai.model_name = requested
+
+        emit(
+            "model_changed",
+            model=ai.model_name,
+            models=models,
+        )
+        return
+
     if command_type == "ping":
         emit("pong")
         return
@@ -77,12 +115,15 @@ def main() -> None:
     ai = XavionAI()
     ai.start_new_session()
 
+    models = ai.list_available_models()
+
     emit(
         "ready",
         name=NAME,
         display_name=DISPLAY_NAME,
         version=VERSION,
         model=ai.model_name,
+        models=models,
     )
 
     for raw_line in sys.stdin:
