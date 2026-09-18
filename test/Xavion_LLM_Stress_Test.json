@@ -1,178 +1,1169 @@
 {
-  "benchmark_suite": "Xavion_LLM_Stress_Test_v2",
-  "description": "Stress test suite for evaluating LLM reasoning, technical accuracy, and instruction following.",
+  "benchmark_suite": "Xavion_LLM_Stress_Test_Ember_v3",
+  "version": 3,
+  "description": "Hybrid benchmark for Xavion Ember. Measures correctness, reasoning, instruction following, hallucination resistance, programming ability, conversational memory, communication quality, stability, and latency. Deterministic constraints are machine-checked; open-ended quality is scored by a rubric-based judge.",
+  "scoring": {
+    "default_runs": 2,
+    "test_pass_threshold": 80,
+    "stable_pass_rate": 1.0,
+    "release_score_threshold": 82
+  },
   "categories": [
     {
-      "section": "Logical Reasoning and Common Sense",
+      "section": "Reasoning and Common Sense",
+      "weight": 14,
       "tests": [
         {
-          "Q": "Sally has 3 brothers. Each of her brothers has 2 sisters. How many sisters does Sally have?",
-          "S": "1 sister. (Sally is one of the 2 sisters, so only one other sister exists)."
+          "id": "reasoning_siblings",
+          "prompt": "Sally has 3 brothers. Each of her brothers has 2 sisters. How many sisters does Sally have? Explain briefly.",
+          "checks": [
+            {
+              "type": "contains_any",
+              "name": "correct_answer",
+              "weight": 2,
+              "hard": true,
+              "values": [
+                "1 sister",
+                "one sister"
+              ]
+            }
+          ],
+          "semantic_dimensions": [
+            {
+              "name": "reasoning",
+              "rubric": "Explains that Sally is one of the two sisters shared by all three brothers, so there is exactly one other sister.",
+              "weight": 2,
+              "hard": true,
+              "pass_score": 3
+            }
+          ]
         },
         {
-          "Q": "I have a 12-liter jug and a 6-liter jug. I need to measure exactly 3 liters of water. How can I do this using only these two jugs?",
-          "S": "Impossible. Both jugs are multiples of 6; any combination of pouring will result in a multiple of 6. The model must explicitly state it is impossible."
+          "id": "reasoning_jugs_impossible",
+          "prompt": "You have an unmarked 12-liter jug and an unmarked 6-liter jug, unlimited water, and no other container. Can you measure exactly 3 liters? Explain why or why not.",
+          "checks": [
+            {
+              "type": "contains_any",
+              "name": "impossibility",
+              "weight": 2,
+              "hard": true,
+              "values": [
+                "impossible",
+                "cannot",
+                "can't"
+              ]
+            }
+          ],
+          "semantic_dimensions": [
+            {
+              "name": "number_theory",
+              "rubric": "Correctly argues that reachable volumes are multiples of gcd(12,6)=6, so 3 L cannot be measured under the stated rules.",
+              "weight": 3,
+              "hard": true,
+              "pass_score": 3
+            }
+          ]
         },
         {
-          "Q": "If it takes 5 machines 5 minutes to make 5 widgets, how long would it take 100 machines to make 100 widgets?",
-          "S": "5 minutes. Each machine produces 1 widget every 5 minutes."
+          "id": "reasoning_widgets",
+          "prompt": "If 5 machines make 5 widgets in 5 minutes, how long do 100 identical machines take to make 100 widgets? Give the answer and one-sentence reasoning.",
+          "checks": [
+            {
+              "type": "regex",
+              "name": "five_minutes",
+              "weight": 2,
+              "hard": true,
+              "pattern": "\\b5\\s*(?:minutes?|min)\\b"
+            }
+          ],
+          "semantic_dimensions": [
+            {
+              "name": "reasoning",
+              "rubric": "Recognizes each machine makes one widget per 5 minutes, so 100 machines make 100 widgets in 5 minutes.",
+              "weight": 2,
+              "hard": true,
+              "pass_score": 3
+            }
+          ]
         },
         {
-          "Q": "A bat and a ball cost $1.10 in total. The bat costs $1.00 more than the ball. How much does the ball cost?",
-          "S": "0.05 dollars (5 cents). The model must avoid the 10-cent trap."
+          "id": "reasoning_probability_switch",
+          "prompt": "Monty Hall: you choose 1 of 3 doors. The host, who knows where the car is and always opens a goat door among the two you did not choose, opens one. Should switching change your chance of winning? State the probability before and after switching.",
+          "checks": [
+            {
+              "type": "contains_any",
+              "name": "one_third",
+              "weight": 1,
+              "hard": true,
+              "values": [
+                "1/3",
+                "one third",
+                "33.3"
+              ]
+            },
+            {
+              "type": "contains_any",
+              "name": "two_thirds",
+              "weight": 1,
+              "hard": true,
+              "values": [
+                "2/3",
+                "two thirds",
+                "66.7"
+              ]
+            }
+          ],
+          "semantic_dimensions": [
+            {
+              "name": "conditional_reasoning",
+              "rubric": "Explains that the initial choice retains 1/3 probability while the remaining unopened door carries 2/3 under the stated host policy.",
+              "weight": 2,
+              "hard": true,
+              "pass_score": 3
+            }
+          ]
         },
         {
-          "Q": "If you are running a race and you pass the person in second place, what place are you in?",
-          "S": "Second place. You took the spot of the person who was second."
-        },
-        {
-          "Q": "Which is heavier: 1 kilogram of gold or 1 kilogram of feathers? Explain the role of buoyancy in a real-world atmosphere.",
-          "S": "Both have the same mass (1kg), but in a real atmosphere, the feathers occupy more volume and experience more buoyancy, making them feel slightly 'lighter' on a scale, or the gold 'heavier'. The model should address both the mass equivalence and the physical nuance."
+          "id": "reasoning_buoyancy",
+          "prompt": "Which weighs more in ordinary air on an ideal force scale: 1 kg of gold or 1 kg of feathers? Distinguish mass from apparent weight and mention buoyancy.",
+          "semantic_dimensions": [
+            {
+              "name": "mass_equivalence",
+              "rubric": "States that both have equal mass: 1 kg.",
+              "weight": 2,
+              "hard": true,
+              "pass_score": 3
+            },
+            {
+              "name": "buoyancy_nuance",
+              "rubric": "Explains that the larger-volume feathers displace more air and experience a larger buoyant force, reducing their apparent weight more than the gold.",
+              "weight": 2,
+              "hard": true,
+              "pass_score": 3
+            }
+          ]
         }
       ]
     },
     {
-      "section": "Creativity and Strict Constraints",
+      "section": "Instruction Following and Exact Constraints",
+      "weight": 12,
       "tests": [
         {
-          "Q": "Explain quantum entanglement using only one-syllable words.",
-          "S": "Conceptually accurate explanation using only one-syllable words. No exceptions."
+          "id": "constraint_exact_token",
+          "prompt": "Reply with exactly this text and nothing else: XAVION-EMBER-READY",
+          "checks": [
+            {
+              "type": "exact",
+              "name": "exact_output",
+              "weight": 1,
+              "hard": true,
+              "expected": "XAVION-EMBER-READY",
+              "case_sensitive": true
+            }
+          ]
         },
         {
-          "Q": "Write a short story about a detective solving a crime, but do not use the letter 'e' anywhere.",
-          "S": "Lipogram: Zero occurrences of the letter 'e'. Coherent narrative."
+          "id": "constraint_twenty_words",
+          "prompt": "Describe a sunset in exactly 20 words. Do not add a title or commentary.",
+          "checks": [
+            {
+              "type": "word_count",
+              "name": "word_count",
+              "weight": 1,
+              "hard": true,
+              "expected": 20
+            }
+          ],
+          "semantic_dimensions": [
+            {
+              "name": "coherence",
+              "rubric": "The 20-word response coherently describes a sunset rather than gaming the count with nonsense.",
+              "weight": 1,
+              "hard": false,
+              "pass_score": 3
+            }
+          ]
         },
         {
-          "Q": "Write a haiku about AI where the first letter of each line spells 'BOT'.",
-          "S": "Acrostic: Lines start with B, O, T. Syllable structure: 5-7-5."
+          "id": "constraint_lipogram",
+          "prompt": "Write a coherent two-sentence micro-story about a robot without using the letter 'e' anywhere. Do not add commentary.",
+          "checks": [
+            {
+              "type": "forbidden_character",
+              "name": "no_e",
+              "weight": 3,
+              "hard": true,
+              "value": "e"
+            },
+            {
+              "type": "max_sentences",
+              "name": "two_sentences_max",
+              "weight": 1,
+              "hard": true,
+              "max": 2
+            }
+          ],
+          "semantic_dimensions": [
+            {
+              "name": "story_coherence",
+              "rubric": "It is recognizably a coherent micro-story about a robot, not merely disconnected words.",
+              "weight": 1,
+              "hard": false,
+              "pass_score": 3
+            }
+          ]
         },
         {
-          "Q": "Describe a sunset using exactly 20 words. No more, no less.",
-          "S": "Strict word count: Exactly 20 words total."
+          "id": "constraint_acrostic",
+          "prompt": "Write exactly three lines about AI. The first letters of the lines must spell BOT. No title.",
+          "checks": [
+            {
+              "type": "line_count",
+              "name": "three_lines",
+              "weight": 2,
+              "hard": true,
+              "expected": 3
+            },
+            {
+              "type": "acrostic",
+              "name": "bot_acrostic",
+              "weight": 3,
+              "hard": true,
+              "expected": "BOT"
+            }
+          ],
+          "semantic_dimensions": [
+            {
+              "name": "relevance",
+              "rubric": "All three lines are meaningfully about AI.",
+              "weight": 1,
+              "hard": false,
+              "pass_score": 3
+            }
+          ]
         },
         {
-          "Q": "Write a poem about a lonely robot using only words that start with the letter 'S'.",
-          "S": "Alliterative constraint: Every single word must start with 'S'."
-        },
-        {
-          "Q": "Summarize the plot of Inception, but every sentence must rhyme with the word 'dream'.",
-          "S": "Constraint: Every sentence in the summary must end with a word that rhymes with 'dream' (e.g., scheme, team, gleam, stream)."
+          "id": "constraint_alliteration",
+          "prompt": "Write one line of at least eight words about a lonely robot. Every word must start with the letter S. No punctuation-only tokens or commentary.",
+          "checks": [
+            {
+              "type": "all_words_start_with",
+              "name": "all_s",
+              "weight": 3,
+              "hard": true,
+              "prefix": "s"
+            },
+            {
+              "type": "word_count",
+              "name": "minimum_words",
+              "weight": 1,
+              "hard": true,
+              "min": 8,
+              "max": 40
+            }
+          ],
+          "semantic_dimensions": [
+            {
+              "name": "meaning",
+              "rubric": "The line conveys loneliness/solitude and a robotic or synthetic subject while satisfying the constraint.",
+              "weight": 1,
+              "hard": false,
+              "pass_score": 3
+            }
+          ]
         }
       ]
     },
     {
-      "section": "Programming and Technical Reasoning",
+      "section": "Programming and Algorithms",
+      "weight": 15,
       "tests": [
         {
-          "Q": "Write a Python script to find the longest palindromic substring in O(n) time.",
-          "S": "Implementation of Manacher's Algorithm. O(n^2) solutions fail."
+          "id": "prog_manacher",
+          "prompt": "Write a correct Python function longest_palindromic_substring(s: str) -> str that runs in O(n) time in the worst case. Briefly name the algorithm used.",
+          "checks": [
+            {
+              "type": "contains_any",
+              "name": "manacher_name",
+              "weight": 2,
+              "hard": true,
+              "values": [
+                "Manacher",
+                "manacher"
+              ]
+            }
+          ],
+          "semantic_dimensions": [
+            {
+              "name": "correctness",
+              "rubric": "The code correctly implements Manacher's algorithm and returns a longest palindromic substring for empty, odd-length, and even-length cases.",
+              "weight": 3,
+              "hard": true,
+              "pass_score": 3
+            },
+            {
+              "name": "complexity",
+              "rubric": "The implementation is genuinely O(n) worst-case, not center expansion or dynamic programming disguised as linear.",
+              "weight": 2,
+              "hard": true,
+              "pass_score": 3
+            }
+          ]
         },
         {
-          "Q": "Identify race conditions in this snippet: std::thread t(func, &res); t.join(); cout << res;",
-          "S": "Must state NO race conditions exist because of the join() before access."
+          "id": "prog_cpp_join_race",
+          "prompt": "C++: analyze this fragment for a data race on res, assuming func writes res and no other thread touches it: std::thread t(func, &res); t.join(); std::cout << res; Is there a race? Explain using synchronization semantics.",
+          "checks": [
+            {
+              "type": "contains_any",
+              "name": "no_race",
+              "weight": 2,
+              "hard": true,
+              "values": [
+                "no data race",
+                "no race",
+                "not a race"
+              ]
+            }
+          ],
+          "semantic_dimensions": [
+            {
+              "name": "happens_before",
+              "rubric": "Explains that successful join synchronizes-with thread completion, so the worker's writes happen-before the subsequent read in the joining thread.",
+              "weight": 3,
+              "hard": true,
+              "pass_score": 3
+            }
+          ]
         },
         {
-          "Q": "SQL: Find the second highest salary without LIMIT or TOP.",
-          "S": "Use nested MAX() or window functions (DENSE_RANK)."
+          "id": "prog_sql_second_salary",
+          "prompt": "SQL: return the second-highest DISTINCT salary from Employee(salary) without LIMIT, TOP, OFFSET, or vendor-specific syntax. Return NULL if fewer than two distinct salaries exist.",
+          "semantic_dimensions": [
+            {
+              "name": "query_correctness",
+              "rubric": "Provides a portable query equivalent to SELECT MAX(salary) FROM Employee WHERE salary < (SELECT MAX(salary) FROM Employee), which naturally returns NULL if no second distinct salary exists.",
+              "weight": 4,
+              "hard": true,
+              "pass_score": 3
+            },
+            {
+              "name": "constraints",
+              "rubric": "Does not use LIMIT, TOP, OFFSET, QUALIFY, or vendor-specific shortcuts.",
+              "weight": 2,
+              "hard": true,
+              "pass_score": 3
+            }
+          ]
         },
         {
-          "Q": "Explain the difference between a process and a thread in terms of memory sharing and context switching overhead.",
-          "S": "Accurate technical distinction: Processes have separate address spaces; threads share the process's memory. Processes have higher context switch overhead."
+          "id": "prog_ipv4_validator",
+          "prompt": "Give a Python regular expression that validates an entire IPv4 address in ordinary dotted-decimal notation, with exactly four decimal octets each in 0..255. Leading zeros may be rejected. Briefly explain the range logic.",
+          "semantic_dimensions": [
+            {
+              "name": "range_correctness",
+              "rubric": "Regex correctly restricts each octet to 0..255 and anchors the entire input, without accepting extra fifth octets or values above 255.",
+              "weight": 4,
+              "hard": true,
+              "pass_score": 3
+            },
+            {
+              "name": "explanation",
+              "rubric": "Explanation identifies the 25[0-5], 2[0-4]d, 1dd, and lower-range alternatives or an equivalent construction.",
+              "weight": 2,
+              "hard": false,
+              "pass_score": 3
+            }
+          ]
         },
         {
-          "Q": "Write a regular expression to validate an IPv4 address, ensuring octets are only 0-255.",
-          "S": "Regex must correctly handle ranges (e.g., ^((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.?\\b){4}$). Simply matching digits is insufficient."
-        },
-        {
-          "Q": "In React, why should you never update state directly (e.g., this.state.x = 1)?",
-          "S": "Must explain that direct mutation does not trigger a re-render and can lead to inconsistent UI state."
+          "id": "prog_big_o_trick",
+          "prompt": "What is the asymptotic time complexity of this code?\nfor i in range(n):\n    j = 1\n    while j < n:\n        j *= 2\nAnswer first with the Big-O, then explain.",
+          "checks": [
+            {
+              "type": "contains_any",
+              "name": "complexity",
+              "weight": 2,
+              "hard": true,
+              "values": [
+                "O(n log n)",
+                "O(nlogn)",
+                "O(n * log n)"
+              ]
+            }
+          ],
+          "semantic_dimensions": [
+            {
+              "name": "derivation",
+              "rubric": "Correctly derives n outer iterations times logarithmically many doublings in the inner loop.",
+              "weight": 2,
+              "hard": true,
+              "pass_score": 3
+            }
+          ]
         }
       ]
     },
     {
-      "section": "Nuances, Ambiguity and Tone",
+      "section": "Systems and Technical Accuracy",
+      "weight": 12,
       "tests": [
         {
-          "Q": "Compare nihilism in Rick and Morty vs Bojack Horseman.",
-          "S": "Nuanced analysis of cosmic vs existential nihilism."
+          "id": "systems_process_thread",
+          "prompt": "Compare processes and threads specifically in address-space sharing, isolation, and typical context-switch overhead. Keep it under 120 words.",
+          "checks": [
+            {
+              "type": "word_count",
+              "name": "concise",
+              "weight": 1,
+              "hard": false,
+              "max": 120
+            }
+          ],
+          "semantic_dimensions": [
+            {
+              "name": "memory",
+              "rubric": "Processes normally have separate virtual address spaces; threads in one process share the process address space while retaining per-thread stacks/register state.",
+              "weight": 2,
+              "hard": true,
+              "pass_score": 3
+            },
+            {
+              "name": "overhead",
+              "rubric": "Accurately states that process switches are typically heavier than thread switches within one process, while avoiding absolute claims that ignore implementation details.",
+              "weight": 2,
+              "hard": true,
+              "pass_score": 3
+            }
+          ]
         },
         {
-          "Q": "Interpret 'I never said she stole my money' in three ways using emphasis.",
-          "S": "Demonstrate shift in meaning based on focus (I vs She vs Money)."
+          "id": "systems_tcp_udp",
+          "prompt": "A real-time multiplayer game sends 20 position updates per second. Explain why UDP is often chosen for frequent transient state updates, while reliable events such as purchases need different handling. Mention ordering, loss, and head-of-line blocking.",
+          "semantic_dimensions": [
+            {
+              "name": "transport_tradeoff",
+              "rubric": "Correctly explains that stale position packets can be dropped and that UDP avoids transport-level retransmission/head-of-line blocking, whereas critical events require reliability through TCP or an application-level reliable protocol.",
+              "weight": 4,
+              "hard": true,
+              "pass_score": 3
+            },
+            {
+              "name": "nuance",
+              "rubric": "Does not claim UDP is inherently faster in every situation or that it guarantees delivery/order.",
+              "weight": 2,
+              "hard": true,
+              "pass_score": 3
+            }
+          ]
         },
         {
-          "Q": "Translate 'It's raining cats and dogs' to Spanish, providing both a literal and an idiomatic equivalent.",
-          "S": "Literal: 'Llueven gatos y perros'. Idiomatic: 'Llueve a cántaros' or 'Está lloviendo a mares'."
+          "id": "systems_virtual_memory",
+          "prompt": "Explain what a page fault is and distinguish a minor/soft page fault from a major/hard page fault. Do not say that every page fault means swapping from disk.",
+          "semantic_dimensions": [
+            {
+              "name": "definition",
+              "rubric": "Defines a page fault as a trap because a virtual-page translation/access cannot be completed under the current page-table state.",
+              "weight": 2,
+              "hard": true,
+              "pass_score": 3
+            },
+            {
+              "name": "minor_major",
+              "rubric": "Distinguishes minor faults that can be resolved without storage I/O from major faults that require storage I/O to obtain the page.",
+              "weight": 3,
+              "hard": true,
+              "pass_score": 3
+            }
+          ]
         },
         {
-          "Q": "Respond to the statement 'I just love working 80 hours a week' in a highly sarcastic tone.",
-          "S": "Must detect the implicit sarcasm and respond with a matching sarcastic/witty tone while acknowledging the exhaustion."
+          "id": "systems_deadlock",
+          "prompt": "List the four Coffman conditions for deadlock and say whether removing any one of them is sufficient to prevent deadlock.",
+          "checks": [
+            {
+              "type": "contains_any",
+              "name": "mutual_exclusion",
+              "weight": 1,
+              "hard": true,
+              "values": [
+                "mutual exclusion"
+              ]
+            },
+            {
+              "type": "contains_any",
+              "name": "hold_wait",
+              "weight": 1,
+              "hard": true,
+              "values": [
+                "hold and wait",
+                "hold-and-wait"
+              ]
+            },
+            {
+              "type": "contains_any",
+              "name": "no_preemption",
+              "weight": 1,
+              "hard": true,
+              "values": [
+                "no preemption",
+                "non-preemption"
+              ]
+            },
+            {
+              "type": "contains_any",
+              "name": "circular_wait",
+              "weight": 1,
+              "hard": true,
+              "values": [
+                "circular wait"
+              ]
+            }
+          ],
+          "semantic_dimensions": [
+            {
+              "name": "prevention",
+              "rubric": "States that all four are necessary for deadlock, so structurally eliminating any one condition is sufficient to prevent deadlock.",
+              "weight": 2,
+              "hard": true,
+              "pass_score": 3
+            }
+          ]
         },
         {
-          "Q": "Is the following statement an opinion or a fact? 'The Godfather is the greatest movie ever made.' Explain why.",
-          "S": "Identify as an opinion. Explain that 'greatest' is subjective and lacks a universal metric for proof."
-        },
-        {
-          "Q": "Explain the 'Ship of Theseus' paradox and its implications for personal identity.",
-          "S": "Accurate summary of the philosophical paradox regarding whether an object that has had all its components replaced remains fundamentally the same."
+          "id": "systems_cache_locality",
+          "prompt": "Why is iterating a row-major C array row-by-row usually faster than column-by-column? Explain spatial locality and cache lines, without claiming Big-O changes.",
+          "semantic_dimensions": [
+            {
+              "name": "locality",
+              "rubric": "Explains contiguous row-major layout, cache-line fetches, and improved spatial locality for row traversal.",
+              "weight": 3,
+              "hard": true,
+              "pass_score": 3
+            },
+            {
+              "name": "complexity",
+              "rubric": "Makes clear that both traversal orders are still O(rows*cols); the difference is constant-factor memory behavior.",
+              "weight": 2,
+              "hard": true,
+              "pass_score": 3
+            }
+          ]
         }
       ]
     },
     {
-      "section": "Hallucinations and False Premises",
+      "section": "Hallucination and False-Premise Resistance",
+      "weight": 12,
       "tests": [
         {
-          "Q": "Who won the Super Bowl in 1925?",
-          "S": "Correct the user: Super Bowl didn't exist until 1967."
+          "id": "hallucination_super_bowl_1925",
+          "prompt": "Who won the Super Bowl in 1925?",
+          "checks": [
+            {
+              "type": "contains_any",
+              "name": "correct_premise",
+              "weight": 2,
+              "hard": true,
+              "values": [
+                "didn't exist",
+                "did not exist",
+                "1967",
+                "1966 season"
+              ]
+            }
+          ],
+          "semantic_dimensions": [
+            {
+              "name": "correction",
+              "rubric": "Clearly rejects the premise instead of inventing a winner and accurately notes that the first Super Bowl was played in January 1967.",
+              "weight": 2,
+              "hard": true,
+              "pass_score": 3
+            }
+          ]
         },
         {
-          "Q": "What was the name of the first astronaut to walk on Mars?",
-          "S": "Refuse premise: No human has walked on Mars yet."
+          "id": "hallucination_mars_walk",
+          "prompt": "What was the name of the first astronaut to walk on Mars, and in what year did it happen?",
+          "checks": [
+            {
+              "type": "contains_any",
+              "name": "no_human",
+              "weight": 2,
+              "hard": true,
+              "values": [
+                "no human",
+                "nobody",
+                "no astronaut",
+                "has not",
+                "hasn't"
+              ]
+            }
+          ],
+          "semantic_dimensions": [
+            {
+              "name": "correction",
+              "rubric": "States that no human has walked on Mars and therefore there is no astronaut/year to provide.",
+              "weight": 3,
+              "hard": true,
+              "pass_score": 3
+            }
+          ]
         },
         {
-          "Q": "Explain how snakes chew their food.",
-          "S": "Correct the user: Snakes swallow food whole; they do not chew."
+          "id": "hallucination_snake_chewing",
+          "prompt": "Explain the chewing technique snakes use to grind food before swallowing.",
+          "semantic_dimensions": [
+            {
+              "name": "correction",
+              "rubric": "Rejects the chewing/grinding premise and explains that snakes generally swallow prey whole, using flexible jaws and alternating jaw movements rather than mastication.",
+              "weight": 4,
+              "hard": true,
+              "pass_score": 3
+            }
+          ]
         },
         {
-          "Q": "In what year did George Washington invent the internet?",
-          "S": "Correct the false premise: George Washington died long before the internet was invented."
+          "id": "hallucination_washington_internet",
+          "prompt": "In what year did George Washington invent the internet? Give the year and explain the invention.",
+          "checks": [
+            {
+              "type": "contains_any",
+              "name": "reject",
+              "weight": 1,
+              "hard": true,
+              "values": [
+                "did not",
+                "didn't",
+                "false premise",
+                "never"
+              ]
+            }
+          ],
+          "semantic_dimensions": [
+            {
+              "name": "historical_correction",
+              "rubric": "Rejects the premise and notes that Washington died in 1799, long before the technologies that became the Internet.",
+              "weight": 3,
+              "hard": true,
+              "pass_score": 3
+            }
+          ]
         },
         {
-          "Q": "Describe the 13th planet in our solar system.",
-          "S": "Identify that there are only 8 planets (or 5 dwarf planets recognized). No 13th planet exists."
-        },
-        {
-          "Q": "Which part of the human brain is responsible for breathing underwater?",
-          "S": "Refuse premise: Humans cannot breathe underwater; no part of the brain enables this."
+          "id": "hallucination_fake_api",
+          "prompt": "Python 3.14 added os.teleport(path) for instant file transfer. Show me how to use it.",
+          "semantic_dimensions": [
+            {
+              "name": "uncertainty_and_correction",
+              "rubric": "Does not invent usage for a nonexistent standard-library API; clearly says the premise/API is unsupported or asks for a source/version if uncertain.",
+              "weight": 3,
+              "hard": true,
+              "pass_score": 3
+            }
+          ]
         }
       ]
     },
     {
-      "section": "General Knowledge (Control Group)",
+      "section": "Ambiguity, Calibration and Communication",
+      "weight": 10,
       "tests": [
         {
-          "Q": "What is the speed of light in a vacuum (exact m/s)?",
-          "S": "299,792,458 m/s"
+          "id": "communication_ambiguous_pronoun",
+          "prompt": "Alex told Jordan that they had won the scholarship. Who won it?",
+          "semantic_dimensions": [
+            {
+              "name": "ambiguity",
+              "rubric": "Recognizes that 'they' is ambiguous between Alex and Jordan (and potentially singular/plural referents) and does not assert a unique winner without more context.",
+              "weight": 4,
+              "hard": true,
+              "pass_score": 3
+            }
+          ]
         },
         {
-          "Q": "What does HTTP 418 mean?",
-          "S": "I'm a teapot (RFC 2324)."
+          "id": "communication_emphasis",
+          "prompt": "Interpret 'I never said she stole my money' in three different ways by changing which word is emphasized. Make the three meanings distinct.",
+          "semantic_dimensions": [
+            {
+              "name": "semantic_shift",
+              "rubric": "Provides three genuinely different readings tied to emphasis, such as I / said / she / my / money, and explains how focus changes the implied contrast.",
+              "weight": 4,
+              "hard": true,
+              "pass_score": 3
+            }
+          ]
         },
         {
-          "Q": "Atomic number and symbol of Tungsten?",
-          "S": "74, W"
+          "id": "communication_idiom",
+          "prompt": "Translate 'It's raining cats and dogs' into Spanish. Give (1) a literal translation and (2) a natural idiomatic equivalent.",
+          "checks": [
+            {
+              "type": "contains_any",
+              "name": "literal",
+              "weight": 1,
+              "hard": true,
+              "values": [
+                "llueven gatos y perros",
+                "está lloviendo gatos y perros"
+              ]
+            },
+            {
+              "type": "contains_any",
+              "name": "idiomatic",
+              "weight": 1,
+              "hard": true,
+              "values": [
+                "llueve a cántaros",
+                "lloviendo a cántaros",
+                "llueve a mares",
+                "lloviendo a mares"
+              ]
+            }
+          ]
         },
         {
-          "Q": "What is the capital of Kazakhstan?",
-          "S": "Astana (formerly Nur-Sultan)."
+          "id": "communication_subjective_claim",
+          "prompt": "Is 'The Godfather is the greatest movie ever made' a fact or an opinion? Explain in no more than two sentences.",
+          "checks": [
+            {
+              "type": "contains_any",
+              "name": "opinion",
+              "weight": 2,
+              "hard": true,
+              "values": [
+                "opinion",
+                "subjective"
+              ]
+            },
+            {
+              "type": "max_sentences",
+              "name": "two_sentences",
+              "weight": 1,
+              "hard": true,
+              "max": 2
+            }
+          ],
+          "semantic_dimensions": [
+            {
+              "name": "explanation",
+              "rubric": "Explains that 'greatest' depends on subjective criteria and lacks a universally provable metric.",
+              "weight": 2,
+              "hard": true,
+              "pass_score": 3
+            }
+          ]
         },
         {
-          "Q": "Who wrote 'The Sorrows of Young Werther'?",
-          "S": "Johann Wolfgang von Goethe."
+          "id": "communication_uncertain_estimate",
+          "prompt": "Without looking anything up, tell me the exact number of grains of sand on Earth.",
+          "semantic_dimensions": [
+            {
+              "name": "calibration",
+              "rubric": "Refuses to present an exact unknowable number; explains that only rough estimates are possible and marks uncertainty clearly.",
+              "weight": 4,
+              "hard": true,
+              "pass_score": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "section": "Multi-turn Context and Memory",
+      "weight": 12,
+      "tests": [
+        {
+          "id": "context_remember_codeword",
+          "turns": [
+            {
+              "user": "For this conversation only, remember this codeword: cobalt-17. Reply briefly."
+            },
+            {
+              "user": "What codeword did I give you? Reply with only the codeword."
+            }
+          ],
+          "checks": [
+            {
+              "type": "exact",
+              "name": "remembered_exactly",
+              "weight": 1,
+              "hard": true,
+              "expected": "cobalt-17",
+              "case_sensitive": false
+            }
+          ]
         },
         {
-          "Q": "What is the largest moon of Saturn?",
-          "S": "Titan."
+          "id": "context_update_preference",
+          "turns": [
+            {
+              "user": "For the next question, answer in exactly one sentence."
+            },
+            {
+              "user": "Actually update that: answer in exactly three bullet points instead."
+            },
+            {
+              "user": "Give me three practical uses of hash tables."
+            }
+          ],
+          "checks": [
+            {
+              "type": "regex",
+              "name": "three_bullets",
+              "weight": 2,
+              "hard": true,
+              "pattern": "(?m)^(?:[-*•]|\\d+[.)])\\s+.+\\n(?:[-*•]|\\d+[.)])\\s+.+\\n(?:[-*•]|\\d+[.)])\\s+.+$"
+            }
+          ],
+          "semantic_dimensions": [
+            {
+              "name": "uses",
+              "rubric": "The three bullets give distinct, technically valid practical uses of hash tables.",
+              "weight": 1,
+              "hard": false,
+              "pass_score": 3
+            }
+          ]
+        },
+        {
+          "id": "context_entity_tracking",
+          "turns": [
+            {
+              "user": "Mira owns the red key. Tomas owns the blue key. Lina owns the green key. Acknowledge briefly."
+            },
+            {
+              "user": "Tomas gives his key to Mira. Lina keeps hers. Who now owns the blue key? Reply with just the name."
+            }
+          ],
+          "checks": [
+            {
+              "type": "exact",
+              "name": "entity_state",
+              "weight": 1,
+              "hard": true,
+              "expected": "Mira",
+              "case_sensitive": false
+            }
+          ]
+        },
+        {
+          "id": "context_correction_overrides",
+          "turns": [
+            {
+              "user": "Use 42 as the project port number for this conversation."
+            },
+            {
+              "user": "Correction: the port is 4242, not 42."
+            },
+            {
+              "user": "What port should the project use? Reply with only the number."
+            }
+          ],
+          "checks": [
+            {
+              "type": "exact",
+              "name": "latest_fact_wins",
+              "weight": 1,
+              "hard": true,
+              "expected": "4242"
+            }
+          ]
+        },
+        {
+          "id": "context_reference_resolution",
+          "turns": [
+            {
+              "user": "I have two files: alpha.txt contains logs, beta.txt contains settings."
+            },
+            {
+              "user": "I renamed the settings file to config.txt."
+            },
+            {
+              "user": "Which file contains the settings now? Reply with only the filename."
+            }
+          ],
+          "checks": [
+            {
+              "type": "exact",
+              "name": "renamed_reference",
+              "weight": 1,
+              "hard": true,
+              "expected": "config.txt",
+              "case_sensitive": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "section": "Math and Data Reasoning",
+      "weight": 7,
+      "tests": [
+        {
+          "id": "math_bat_ball",
+          "prompt": "A bat and ball cost $1.10 total. The bat costs exactly $1.00 more than the ball. How much does the ball cost? Reply with the amount and one equation.",
+          "checks": [
+            {
+              "type": "contains_any",
+              "name": "five_cents",
+              "weight": 2,
+              "hard": true,
+              "values": [
+                "$0.05",
+                "0.05",
+                "5 cents",
+                "5¢"
+              ]
+            }
+          ],
+          "semantic_dimensions": [
+            {
+              "name": "equation",
+              "rubric": "Uses or implies x + (x + 1.00) = 1.10, yielding x = 0.05.",
+              "weight": 2,
+              "hard": true,
+              "pass_score": 3
+            }
+          ]
+        },
+        {
+          "id": "math_percentage_points",
+          "prompt": "A conversion rate rises from 20% to 25%. What is the increase in percentage points, and what is the relative percentage increase?",
+          "checks": [
+            {
+              "type": "contains_any",
+              "name": "pp",
+              "weight": 1,
+              "hard": true,
+              "values": [
+                "5 percentage points",
+                "5 pp"
+              ]
+            },
+            {
+              "type": "contains_any",
+              "name": "relative",
+              "weight": 1,
+              "hard": true,
+              "values": [
+                "25%",
+                "25 percent"
+              ]
+            }
+          ],
+          "semantic_dimensions": [
+            {
+              "name": "distinction",
+              "rubric": "Clearly distinguishes +5 percentage points from a 25% relative increase.",
+              "weight": 2,
+              "hard": true,
+              "pass_score": 3
+            }
+          ]
+        },
+        {
+          "id": "math_average_speed",
+          "prompt": "You travel 60 km at 30 km/h and then 60 km at 60 km/h. What is your average speed for the full trip? Explain briefly.",
+          "checks": [
+            {
+              "type": "contains_any",
+              "name": "forty",
+              "weight": 2,
+              "hard": true,
+              "values": [
+                "40 km/h",
+                "40km/h"
+              ]
+            }
+          ],
+          "semantic_dimensions": [
+            {
+              "name": "weighted_time",
+              "rubric": "Computes total distance 120 km over total time 3 h, rather than taking the arithmetic mean 45 km/h.",
+              "weight": 2,
+              "hard": true,
+              "pass_score": 3
+            }
+          ]
+        },
+        {
+          "id": "math_conditional_probability",
+          "prompt": "A disease affects 1% of people. A test has 90% sensitivity and a 5% false-positive rate. If a person tests positive, approximately what is P(disease | positive)? Show the Bayes calculation.",
+          "checks": [
+            {
+              "type": "numeric_range",
+              "name": "posterior_range",
+              "weight": 2,
+              "hard": true,
+              "pattern": "(?:approximately|approx\\.?|≈|=)?\\s*(1[45](?:\\.\\d+)?)\\s*%",
+              "min": 14,
+              "max": 16
+            }
+          ],
+          "semantic_dimensions": [
+            {
+              "name": "bayes",
+              "rubric": "Uses 0.9*0.01 / (0.9*0.01 + 0.05*0.99) ≈ 0.154, not 90%.",
+              "weight": 3,
+              "hard": true,
+              "pass_score": 3
+            }
+          ]
+        },
+        {
+          "id": "math_median_outlier",
+          "prompt": "For the data [1, 2, 2, 3, 100], give the mean and median and state which is more robust to the outlier.",
+          "checks": [
+            {
+              "type": "contains_any",
+              "name": "mean",
+              "weight": 1,
+              "hard": true,
+              "values": [
+                "21.6"
+              ]
+            },
+            {
+              "type": "contains_any",
+              "name": "median",
+              "weight": 1,
+              "hard": true,
+              "values": [
+                "median is 2",
+                "median: 2",
+                "median = 2"
+              ]
+            },
+            {
+              "type": "contains_any",
+              "name": "robust",
+              "weight": 1,
+              "hard": true,
+              "values": [
+                "median"
+              ]
+            }
+          ],
+          "semantic_dimensions": [
+            {
+              "name": "robustness",
+              "rubric": "Explains that the median is less affected by the extreme value 100 than the mean.",
+              "weight": 1,
+              "hard": true,
+              "pass_score": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "section": "Assistant Usefulness and Response Discipline",
+      "weight": 6,
+      "tests": [
+        {
+          "id": "assistant_concise_direct",
+          "prompt": "What does DNS stand for? Answer in one short sentence, with no extra background.",
+          "checks": [
+            {
+              "type": "contains_any",
+              "name": "dns_expansion",
+              "weight": 2,
+              "hard": true,
+              "values": [
+                "Domain Name System"
+              ]
+            },
+            {
+              "type": "max_sentences",
+              "name": "one_sentence",
+              "weight": 1,
+              "hard": true,
+              "max": 1
+            },
+            {
+              "type": "word_count",
+              "name": "short",
+              "weight": 1,
+              "hard": false,
+              "max": 20
+            }
+          ]
+        },
+        {
+          "id": "assistant_no_fake_certainty",
+          "prompt": "I flipped a fair coin five times and got heads every time. What will the sixth flip be? Give the most justified answer, not a guess.",
+          "semantic_dimensions": [
+            {
+              "name": "probabilistic_calibration",
+              "rubric": "States that the sixth independent fair flip is still 50/50 and cannot be predicted from the previous sequence.",
+              "weight": 4,
+              "hard": true,
+              "pass_score": 3
+            }
+          ]
+        },
+        {
+          "id": "assistant_follow_format",
+          "prompt": "Name three Git commands for inspecting history. Output only a comma-separated list of exactly three command names, no explanations.",
+          "checks": [
+            {
+              "type": "regex",
+              "name": "format",
+              "weight": 2,
+              "hard": true,
+              "pattern": "^[^,\\n]+,\\s*[^,\\n]+,\\s*[^,\\n]+$"
+            },
+            {
+              "type": "not_contains_any",
+              "name": "no_explanations",
+              "weight": 1,
+              "hard": false,
+              "values": [
+                ":",
+                "- ",
+                "because"
+              ]
+            }
+          ],
+          "semantic_dimensions": [
+            {
+              "name": "git_validity",
+              "rubric": "All three items are real Git commands/subcommands useful for inspecting history, such as git log, git show, or git reflog.",
+              "weight": 2,
+              "hard": true,
+              "pass_score": 3
+            }
+          ]
+        },
+        {
+          "id": "assistant_detect_missing_info",
+          "prompt": "My program crashes. Tell me the exact line that is wrong.",
+          "semantic_dimensions": [
+            {
+              "name": "missing_context",
+              "rubric": "Does not fabricate a line number; clearly says the code/error context is missing and identifies the minimal information needed to diagnose it.",
+              "weight": 4,
+              "hard": true,
+              "pass_score": 3
+            }
+          ]
+        },
+        {
+          "id": "assistant_separate_fact_inference",
+          "prompt": "A server's CPU is at 95%. Does that prove the application has a CPU bottleneck? Answer briefly and distinguish observation from conclusion.",
+          "semantic_dimensions": [
+            {
+              "name": "causal_caution",
+              "rubric": "States that high CPU utilization is evidence/observation but does not by itself prove an application CPU bottleneck; more profiling/context is needed.",
+              "weight": 4,
+              "hard": true,
+              "pass_score": 3
+            }
+          ]
         }
       ]
     }
