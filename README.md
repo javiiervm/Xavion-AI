@@ -5,16 +5,14 @@
     <img src="https://img.shields.io/github/last-commit/javiiervm/Xavion-AI/dev" alt="Last Commit" />
     <!-- <img src="https://img.shields.io/badge/platform-linux%20%7C%20windows%20%7C%20macos-lightgrey" alt="Platform Support" /> -->
     <img src="https://img.shields.io/badge/python-3.10%2B-yellow" alt="Python Version" />
-    <img src="https://img.shields.io/badge/release-Spark%2026.9-orange" alt="Xavion Release" />
     <img src="https://img.shields.io/badge/inference-Ollama-blue" alt="Ollama" />
+    <img src="https://img.shields.io/badge/langchain-0.3.27-magenta" alt="LangChain Version" />
     <img src="https://img.shields.io/github/issues/javiiervm/Xavion-AI?branch=dev" alt="Issues" />
     <img src="https://img.shields.io/github/stars/javiiervm/Xavion-AI?branch=dev" alt="Stars" />
   </p>
 </div>
 
 Xavion AI is a local-first AI assistant built around a reusable Python backend. Local inference is provided by [Ollama](https://ollama.com/), while LangChain components handle prompt composition and model interaction. Its main architectural goal is to keep AI and conversation logic independent from presentation code so that multiple frontends can reuse the same backend.
-
-The current `dev` branch targets **Xavion Spark 26.9**, the stable foundation for the first modern Xavion release.
 
 ## Current Status
 
@@ -84,18 +82,6 @@ for token in assistant.chat_stream("Hello, Xavion"):
 
 This boundary already allows the CLI and Quickshell integration to share the same backend, while leaving room for future web and desktop clients.
 
-## Release Metadata
-
-Release identity is defined in `xavion/version.py`:
-
-```python
-NAME = "Spark"
-VERSION = "26.9"
-DISPLAY_NAME = f"Xavion {NAME}"
-```
-
-Components should import these values instead of hardcoding the release name or version. Xavion uses calendar-style release numbering: `26.9` for September 2026, `26.9.1` for another release in the same month, `26.10` for October 2026, and `27.1` for January 2027.
-
 ## Requirements
 
 - Python 3.10 or newer.
@@ -111,7 +97,6 @@ Clone the repository:
 ```bash
 git clone https://github.com/javiiervm/Xavion-AI.git
 cd Xavion-AI
-git switch dev
 ```
 
 Create and activate a virtual environment:
