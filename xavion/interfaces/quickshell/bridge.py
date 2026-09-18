@@ -5,6 +5,7 @@ import sys
 from typing import Any
 
 from xavion.core.engine import XavionAI
+from xavion.version import DISPLAY_NAME, NAME, VERSION
 
 
 def emit(event_type: str, **payload: Any) -> None:
@@ -78,6 +79,9 @@ def main() -> None:
 
     emit(
         "ready",
+        name=NAME,
+        display_name=DISPLAY_NAME,
+        version=VERSION,
         model=ai.model_name,
     )
 

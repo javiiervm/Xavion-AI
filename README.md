@@ -5,8 +5,8 @@
     <img src="https://img.shields.io/github/last-commit/javiiervm/Xavion-AI/dev" alt="Last Commit" />
     <!-- <img src="https://img.shields.io/badge/platform-linux%20%7C%20windows%20%7C%20macos-lightgrey" alt="Platform Support" /> -->
     <img src="https://img.shields.io/badge/python-3.10%2B-yellow" alt="Python Version" />
-    <img src="https://img.shields.io/badge/ollama-0.5.3-blue" alt="Ollama Version" />
-    <img src="https://img.shields.io/badge/langchain-0.3.27-magenta" alt="LangChain Version" />
+    <img src="https://img.shields.io/badge/release-Spark%2026.9-orange" alt="Xavion Release" />
+    <img src="https://img.shields.io/badge/inference-Ollama-blue" alt="Ollama" />
     <img src="https://img.shields.io/github/issues/javiiervm/Xavion-AI?branch=dev" alt="Issues" />
     <img src="https://img.shields.io/github/stars/javiiervm/Xavion-AI?branch=dev" alt="Stars" />
   </p>
@@ -14,9 +14,11 @@
 
 Xavion AI is a local-first AI assistant built around a reusable Python backend. Local inference is provided by [Ollama](https://ollama.com/), while LangChain components handle prompt composition and model interaction. Its main architectural goal is to keep AI and conversation logic independent from presentation code so that multiple frontends can reuse the same backend.
 
+The current `dev` branch targets **Xavion Spark 26.9**, the stable foundation for the first modern Xavion release.
+
 ## Current Status
 
-The terminal interface is currently the supported frontend. Web, desktop, and shell integrations are planned, but they are not implemented in this branch yet.
+The terminal interface is the primary supported frontend. A lightweight Quickshell bridge is also implemented so external shell UI components can reuse the same backend through a newline-delimited JSON protocol. Web and standalone desktop interfaces are not implemented yet.
 
 Current capabilities include:
 
@@ -28,6 +30,8 @@ Current capabilities include:
 - Optional CodeLlama switching while using code mode.
 - Persistent local conversation sessions stored as JSON.
 - Interactive terminal UI built with Rich and prompt-toolkit.
+- Quickshell bridge with streaming JSON events for shell integration.
+- Centralized release metadata for the Xavion name and version.
 - An LLM stress-test suite for reasoning, technical accuracy, and instruction following.
 
 ## Architecture
@@ -36,6 +40,8 @@ Current capabilities include:
 Xavion-AI/
 ├── assets/
 │   └── logo_name.png
+├── docs/
+│   └── voice-ideas.md
 ├── test/
 │   ├── Xavion_LLM_Stress_Test.json
 │   └── stress_test.py
@@ -44,10 +50,13 @@ Xavion-AI/
 │   │   ├── constants.py
 │   │   ├── engine.py
 │   │   └── intent.py
-│   └── interfaces/
-│       └── cli/
-│           ├── app.py
-│           └── ui.py
+│   ├── interfaces/
+│   │   ├── cli/
+│   │   │   ├── app.py
+│   │   │   └── ui.py
+│   │   └── quickshell/
+│   │       └── bridge.py
+│   └── version.py
 ├── main.py
 ├── requirements.txt
 └── README.md
@@ -58,6 +67,8 @@ The separation is intentional:
 - `xavion/core/` contains reusable assistant behavior and should not depend on a particular frontend.
 - `xavion/interfaces/` contains presentation and interaction code for each client.
 - `main.py` manages the local Ollama lifecycle and dispatches the selected interface.
+- `xavion/version.py` is the single source of truth for the current Xavion release name and version.
+- `xavion/interfaces/quickshell/bridge.py` exposes the core to Quickshell without duplicating assistant logic.
 - `test/` contains the current model-level stress test.
 
 A frontend can consume the core directly without depending on terminal-specific code:
@@ -71,7 +82,19 @@ for token in assistant.chat_stream("Hello, Xavion"):
     print(token, end="", flush=True)
 ```
 
-This boundary is intended to support future web, desktop, and Quickshell clients without duplicating backend behavior.
+This boundary already allows the CLI and Quickshell integration to share the same backend, while leaving room for future web and desktop clients.
+
+## Release Metadata
+
+Release identity is defined in `xavion/version.py`:
+
+```python
+NAME = "Spark"
+VERSION = "26.9"
+DISPLAY_NAME = f"Xavion {NAME}"
+```
+
+Components should import these values instead of hardcoding the release name or version. Xavion uses calendar-style release numbering: `26.9` for September 2026, `26.9.1` for another release in the same month, `26.10` for October 2026, and `27.1` for January 2027.
 
 ## Requirements
 
@@ -88,6 +111,7 @@ Clone the repository:
 ```bash
 git clone https://github.com/javiiervm/Xavion-AI.git
 cd Xavion-AI
+git switch dev
 ```
 
 Create and activate a virtual environment:
@@ -135,6 +159,16 @@ Enable diagnostic output with:
 python main.py cli --debug
 ```
 
+## Quickshell Bridge
+
+The Quickshell integration uses a small backend bridge rather than terminal-specific code:
+
+```bash
+python -m xavion.interfaces.quickshell.bridge
+```
+
+The bridge reads newline-delimited JSON commands from standard input and emits newline-delimited JSON events on standard output. It supports chat streaming, new sessions, history resets, and health checks. The initial `ready` event also exposes the current release name, version, display name, and active model so a Quickshell frontend can display them without hardcoding release metadata.
+
 ## CLI Commands
 
 | Command | Description |
@@ -167,4 +201,4 @@ The benchmark is intended as a development signal, not as a production-readiness
 
 ## Development Direction
 
-`develop` is intentionally focused on establishing a clean, frontend-agnostic foundation before additional interfaces and advanced assistant capabilities are added. New frontends should reuse `xavion/core/` rather than reimplement conversation, model, or session behavior.
+`dev` currently represents the Spark baseline: a clean, local-first, frontend-agnostic assistant foundation. Advanced capabilities that are not required for this baseline are intentionally deferred to **Xavion Ember**. New interfaces should continue to reuse `xavion/core/` rather than reimplement conversation, model, or session behavior.

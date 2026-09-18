@@ -23,6 +23,7 @@ from rich.table import Table
 from rich.text import Text
 
 from xavion.core.constants import DEFAULT_CODE_MODEL
+from xavion.version import DISPLAY_NAME, VERSION
 
 COLOR_SECONDARY = "#FFFFFF"
 COLOR_ACCENT = "#A0A0A0"
@@ -81,7 +82,7 @@ class XavionCLI:
             "   [bold #CC5500]▀▀[/][bold #D49A36]▀[/][bold #FFFFFF]▀[/][bold #D49A36]▀[/][bold #CC5500]▀▀[/]   \n"
         )
         info = (
-            f"\nXavion Spark CLI [bold {COLOR_SECONDARY}]v26.05[/]\n\n"
+            f"\n{DISPLAY_NAME} CLI [bold {COLOR_SECONDARY}]v{VERSION}[/]\n\n"
             f"Model:  {self.ai.model_name} [bold {COLOR_ACCENT}]/model[/]\n"
             f"Mode:   {self.intent_mode} [bold {COLOR_ACCENT}]/mode[/]"
         )
