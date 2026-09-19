@@ -26,7 +26,7 @@ try:
     from langchain_core.prompts import ChatPromptTemplate
     from langchain_ollama import OllamaLLM
 
-    from xavion.core.constants import DEFAULT_MODEL
+    from xavion.core.config import resolve_model_name
     from xavion.core.engine import XavionAI
 except ImportError as exc:
     print(f"Error: Missing dependencies or incorrect directory structure. {exc}")
@@ -571,11 +571,15 @@ def build_parser() -> argparse.ArgumentParser:
         description="Hybrid deterministic + LLM-judge benchmark for Xavion."
     )
     parser.add_argument("--suite", default=None, help="Path to benchmark JSON suite.")
-    parser.add_argument("--model", default=DEFAULT_MODEL, help="Xavion model under test.")
+    parser.add_argument(
+        "--model",
+        default=None,
+        help="Xavion model under test. Defaults to the configured model.",
+    )
     parser.add_argument(
         "--judge-model",
-        default=os.getenv("XAVION_JUDGE_MODEL", DEFAULT_MODEL),
-        help="Ollama model used as semantic judge.",
+        default=os.getenv("XAVION_JUDGE_MODEL"),
+        help="Ollama model used as semantic judge. Defaults to the model under test.",
     )
     parser.add_argument(
         "--runs",
@@ -613,6 +617,15 @@ def should_run(category: str, test_id: str, filters: Sequence[str]) -> bool:
 
 def main() -> int:
     args = build_parser().parse_args()
+    model_name = resolve_model_name(model_name)
+
+    if model_name is None:
+        console.print(
+            "[bold red]Error:[/] No model was specified and no default model is configured."
+        )
+        return 2
+
+    judge_model = judge_model or model_name
     script_dir = Path(__file__).resolve().parent
     run_stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     log_path = script_dir / DEFAULT_LOG_DIR / f"xavion_stress_{run_stamp}.txt"
@@ -641,20 +654,20 @@ def main() -> int:
         console.print("[bold red]Error:[/] --runs must be at least 1.")
         return 2
 
-    evaluator = XavionEvaluator(args.model, args.judge_model)
+    evaluator = XavionEvaluator(model_name, judge_model)
 
     console.print(
         Panel.fit(
             f"[bold white]{suite.get('benchmark_suite', 'Xavion Benchmark')}[/]\n"
             f"[grey70]{suite.get('description', '')}[/]\n\n"
-            f"Model: [cyan]{args.model}[/]  Judge: [magenta]{args.judge_model}[/]  "
+            f"Model: [cyan]{model_name}[/]  Judge: [magenta]{judge_model}[/]  "
             f"Runs/test: [yellow]{runs_per_test}[/]",
             title="XAVION AI STRESS TEST",
             border_style="cyan",
         )
     )
 
-    if args.model == args.judge_model:
+    if model_name == judge_model:
         console.print(
             "[yellow]Warning:[/] the model under test is also the semantic judge. "
             "Deterministic checks remain independent, but semantic scores may be biased. "
@@ -841,8 +854,8 @@ def main() -> int:
             "benchmark_suite": suite.get("benchmark_suite"),
             "suite_version": suite.get("version"),
             "timestamp_utc": datetime.now(timezone.utc).isoformat(),
-            "model": args.model,
-            "judge_model": args.judge_model,
+            "model": model_name,
+            "judge_model": judge_model,
             "runs_per_test": runs_per_test,
             "test_pass_threshold": pass_threshold,
             "stable_pass_rate_required": stable_pass_rate,

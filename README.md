@@ -31,6 +31,8 @@ Current capabilities include:
 - Quickshell bridge with streaming JSON events for shell integration.
 - Centralized release metadata for the Xavion name and version.
 - An LLM stress-test suite for reasoning, technical accuracy, and instruction following.
+- Persistent user-selected default model configuration.
+- Per-execution and runtime model overrides without changing the configured default.
 
 ## Architecture
 
@@ -46,6 +48,7 @@ Xavion-AI/
 ├── xavion/
 │   ├── core/
 │   │   ├── constants.py
+│   │   ├── config.py
 │   │   ├── engine.py
 │   │   └── intent.py
 │   ├── interfaces/
@@ -74,7 +77,7 @@ A frontend can consume the core directly without depending on terminal-specific 
 ```python
 from xavion.core.engine import XavionAI
 
-assistant = XavionAI()
+assistant = XavionAI(model_name="your-model")
 
 for token in assistant.chat_stream("Hello, Xavion"):
     print(token, end="", flush=True)
@@ -86,7 +89,7 @@ This boundary already allows the CLI and Quickshell integration to share the sam
 
 - Python 3.10 or newer.
 - Ollama installed locally and available through the `ollama` command.
-- The default `llama3.1` model installed in Ollama. Other installed models can be selected at runtime from the CLI.
+- At least one Ollama model for normal use. Xavion can guide model installation through its configuration wizard.
 
 The launcher can attempt to start Ollama automatically. The current lifecycle implementation is primarily designed for Unix-like systems; broader launcher portability is still a development task.
 
@@ -118,10 +121,10 @@ Install the Python dependencies:
 pip install -r requirements.txt
 ```
 
-Pull the default model if it is not already installed:
+Pull and select the LLM model you want to use through the wizzard:
 
 ```bash
-ollama pull llama3.1
+python main.py --config
 ```
 
 ## Running Xavion
@@ -142,6 +145,12 @@ Enable diagnostic output with:
 
 ```bash
 python main.py cli --debug
+```
+
+Select a different model only for the current execution with:
+
+```bash
+python main.py --model <model_name>
 ```
 
 ## Quickshell Bridge

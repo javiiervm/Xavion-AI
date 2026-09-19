@@ -109,11 +109,9 @@ Prefer the shortest response that still fully answers the request.
 """,
 }
 
+# Model configuration
+RECOMMENDED_MODEL = "qwen3.5:9b"
 
-# Default model configuration
-
-DEFAULT_MODEL = "llama3.1"
-DEFAULT_CODE_MODEL = "codellama"
 DEFAULT_SYSTEM_KNOWLEDGE = """You are Xavion, a general-purpose AI assistant created by Javier Villanueva.
 
 Respond to the user's actual intent in the most useful and natural way for the situation.

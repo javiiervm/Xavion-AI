@@ -8,7 +8,6 @@ from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_ollama import ChatOllama
 
 from xavion.core.constants import (
-    DEFAULT_MODEL,
     DEFAULT_SYSTEM_KNOWLEDGE,
     INSTRUCTION_MAP,
     OLLAMA_KEEP_ALIVE,
@@ -22,11 +21,11 @@ class XavionAI:
 
     def __init__(
         self,
-        model_name: str = DEFAULT_MODEL,
+        model_name: str,
         system_knowledge: str = DEFAULT_SYSTEM_KNOWLEDGE,
         debug_callback: Optional[Callable[[str, str], None]] = None,
     ):
-        self._model_name = model_name
+        self.model_name = model_name
         self.system_knowledge = system_knowledge
         self.history: List[Dict[str, str]] = []
         self.detector = IntentDetector(debug_callback=debug_callback)
@@ -39,7 +38,10 @@ class XavionAI:
 
     @model_name.setter
     def model_name(self, value):
-        self._model_name = value
+        if not isinstance(value, str) or not value.strip():
+            raise ValueError("Model name must be a non-empty string.")
+
+        self._model_name = value.strip()
 
     @property
     def debug_callback(self):

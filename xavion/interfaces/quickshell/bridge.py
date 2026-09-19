@@ -6,6 +6,7 @@ from typing import Any
 
 from xavion.core.engine import XavionAI
 from xavion.version import DISPLAY_NAME, NAME, VERSION
+from xavion.core.config import resolve_model_name
 
 
 def emit(event_type: str, **payload: Any) -> None:
@@ -112,7 +113,16 @@ def handle_command(ai: XavionAI, command: dict[str, Any]) -> None:
 
 
 def main() -> None:
-    ai = XavionAI()
+    model_name = resolve_model_name()
+
+    if model_name is None:
+        emit(
+            "error",
+            message="No default model is configured. Run 'python main.py --config'.",
+        )
+        return
+
+    ai = XavionAI(model_name=model_name)
     ai.start_new_session()
 
     models = ai.list_available_models()

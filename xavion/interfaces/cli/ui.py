@@ -22,7 +22,6 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
-from xavion.core.constants import DEFAULT_CODE_MODEL
 from xavion.version import DISPLAY_NAME, VERSION
 
 COLOR_SECONDARY = "#FFFFFF"
@@ -59,7 +58,6 @@ class XavionCLI:
         self.input_history = InMemoryHistory()
         self.last_models = []
         self.last_sessions = []
-        self.pre_code_model = None
 
     def _status_info(self) -> str:
         cwd = os.getcwd().replace(os.path.expanduser("~"), "~")
@@ -362,28 +360,10 @@ class XavionCLI:
             self._error(f"Invalid mode. Available: {', '.join(modes)}")
             return
 
-        old_mode = self.intent_mode
         self.intent_mode = new_mode
         self._info(f"Mode switched to: {new_mode}")
 
-        if new_mode == "code" and old_mode != "code":
-            models = self.ai.list_available_models()
-            if self.ai.model_name != DEFAULT_CODE_MODEL and any(
-                model == DEFAULT_CODE_MODEL or model.startswith(DEFAULT_CODE_MODEL + ":")
-                for model in models
-            ):
-                self.pre_code_model = self.ai.model_name
-                self.ai.model_name = DEFAULT_CODE_MODEL
-                self._info(f"Model automatically switched to: {DEFAULT_CODE_MODEL}")
-            elif self.ai.model_name != DEFAULT_CODE_MODEL:
-                self._info(
-                    f"{DEFAULT_CODE_MODEL} is not installed. Run: ollama pull {DEFAULT_CODE_MODEL}"
-                )
-        elif old_mode == "code" and new_mode != "code" and self.pre_code_model:
-            self.ai.model_name = self.pre_code_model
-            self._info(f"Model restored to: {self.pre_code_model}")
-            self.pre_code_model = None
-
+        
     def _select_tone(self, parts):
         tones = ["adaptive", "casual", "formal", "sarcastic", "concise"]
         if len(parts) == 1:
