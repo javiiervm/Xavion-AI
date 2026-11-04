@@ -71,11 +71,16 @@ class XavionAI:
         capabilities = self.get_model_capabilities()
         return capabilities.available and capabilities.thinking
 
-    def _get_model(self, callbacks: Optional[List[Any]] = None):
+    def _get_model(
+        self,
+        callbacks: Optional[List[Any]] = None,
+        *,
+        num_ctx: int = 4096,
+    ):
         return ChatOllama(
             model=self.model_name,
             callbacks=callbacks,
-            num_ctx=4096,
+            num_ctx=num_ctx,
             num_predict=1024,
             keep_alive=OLLAMA_KEEP_ALIVE,
             temperature=0.6,
@@ -186,7 +191,13 @@ class XavionAI:
             messages, _ = self._prepare_messages(
                 prompt, intent_mode, tone_mode, images=attachments
             )
-            model = self._get_model()
+            has_images = bool(images) or any(
+                entry.get("images") for entry in self.history
+            )
+
+            model = self._get_model(
+                num_ctx=8192 if has_images else 4096
+            )
 
             full_response = ""
             try:
