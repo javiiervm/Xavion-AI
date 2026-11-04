@@ -41,6 +41,7 @@ class XavionAI:
         self.data_dir = Path(data_dir)
         self.images = ImageStore(self.data_dir)
         self.capability_provider = capability_provider or OllamaCapabilityProvider()
+        self.reasoning_mode = "off"
 
     @property
     def model_name(self):
@@ -65,6 +66,11 @@ class XavionAI:
         """Discover whether the active model supports vision and other features."""
         return self.capability_provider.get(self.model_name, refresh=refresh)
 
+    def supports_reasoning(self) -> bool:
+        """Check whether the active model supports reasoning."""
+        capabilities = self.get_model_capabilities()
+        return capabilities.available and capabilities.thinking
+
     def _get_model(self, callbacks: Optional[List[Any]] = None):
         return ChatOllama(
             model=self.model_name,
@@ -73,6 +79,11 @@ class XavionAI:
             num_predict=1024,
             keep_alive=OLLAMA_KEEP_ALIVE,
             temperature=0.6,
+            reasoning=(
+                self.reasoning_mode == "on"
+                if self.supports_reasoning()
+                else None
+            ),
         )
 
     def list_available_models(self) -> List[str]:

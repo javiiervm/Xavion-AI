@@ -2,6 +2,7 @@ import os
 import re
 import shutil
 import time
+from pathlib import Path
 
 import pyperclip
 import rich.box
@@ -22,6 +23,7 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
+from xavion.core.images import MAX_IMAGE_BYTES, MAX_IMAGES_PER_MESSAGE
 from xavion.version import DISPLAY_NAME, VERSION
 
 COLOR_SECONDARY = "#FFFFFF"
@@ -58,22 +60,22 @@ class XavionCLI:
         self.input_history = InMemoryHistory()
         self.last_models = []
         self.last_sessions = []
+        self.pending_images: list[str] = []
 
     def _status_info(self) -> str:
         cwd = os.getcwd().replace(os.path.expanduser("~"), "~")
         debug_status = " [debug]" if self.debug_mode else ""
-        reasoning_status = (
-            self.ai.reasoning_mode
-            if self.ai.supports_reasoning()
-            else "unsupported"
+        attachment_status = (
+            f"    <style fg='{COLOR_ACCENT}' class='bold'>/images</style> "
+            f"({len(self.pending_images)})"
+            if self.pending_images else ""
         )
         return (
             f" {cwd}    "
             f"<style fg='{COLOR_ACCENT}' class='bold'>/mode</style> ({self.intent_mode})    "
             f"<style fg='{COLOR_ACCENT}' class='bold'>/tone</style> ({self.tone_mode})    "
             f"<style fg='{COLOR_ACCENT}' class='bold'>/model</style> ({self.ai.model_name})"
-            f"<style fg='{COLOR_ACCENT}' class='bold'>/reasoning</style> ({reasoning_status})    "
-            f"{debug_status}"
+            f"{attachment_status}{debug_status}"
         )
 
     def print_banner(self):
@@ -85,16 +87,10 @@ class XavionCLI:
             "  [bold #CC5500]██[/][bold #D49A36]█[/][bold #FFFFFF]███[/][bold #D49A36]█[/][bold #CC5500]██[/]  \n"
             "   [bold #CC5500]▀▀[/][bold #D49A36]▀[/][bold #FFFFFF]▀[/][bold #D49A36]▀[/][bold #CC5500]▀▀[/]   \n"
         )
-        reasoning_status = (
-            self.ai.reasoning_mode
-            if self.ai.supports_reasoning()
-            else "unsupported"
-        )
         info = (
             f"\n{DISPLAY_NAME} CLI [bold {COLOR_SECONDARY}]v{VERSION}[/]\n\n"
             f"Model:  {self.ai.model_name} [bold {COLOR_ACCENT}]/model[/]\n"
             f"Mode:   {self.intent_mode} [bold {COLOR_ACCENT}]/mode[/]"
-            f"Reasoning: {reasoning_status} [bold {COLOR_ACCENT}]/reasoning[/]\n"
         )
         grid = Table.grid(padding=(0, 3))
         grid.add_row(logo, info)
@@ -203,6 +199,34 @@ class XavionCLI:
     def generate_response(self, user_text: str):
         self.console.print()
         full_response = ""
+        attached_paths = list(self.pending_images)
+
+        if attached_paths:
+            try:
+                capabilities = self.ai.get_model_capabilities()
+            except Exception as exc:
+                self._error(f"Could not check model capabilities: {exc}")
+                self.console.print()
+                return
+            if not capabilities.available:
+                self._error(
+                    "Could not verify whether this model supports images: "
+                    + (capabilities.error or "Ollama capability lookup failed.")
+                )
+                self.console.print()
+                return
+            if not capabilities.vision:
+                self._error(
+                    f"Model '{self.ai.model_name}' does not support images. "
+                    "Switch to a vision model or use /clearimages."
+                )
+                self.console.print()
+                return
+
+            self._info(
+                f"Sending {len(attached_paths)} image(s) with this message."
+            )
+
         try:
             with Live(console=self.console, refresh_per_second=15, transient=False) as live:
                 grid = Table.grid(padding=(0, 1))
@@ -213,11 +237,16 @@ class XavionCLI:
                     user_text,
                     intent_mode=self.intent_mode,
                     tone_mode=self.tone_mode,
+                    images=[{"path": path} for path in attached_paths],
                 ):
                     full_response += token
                     grid = Table.grid(padding=(0, 1))
                     grid.add_row(f"[bold {COLOR_SECONDARY}] [/]", Markdown(full_response))
                     live.update(grid)
+
+            # Clear attachments only after the engine has completed successfully.
+            if attached_paths:
+                del self.pending_images[:len(attached_paths)]
 
             self.last_code_blocks = re.findall(
                 r"```(?:\w+)?\n(.*?)\n```", full_response, re.DOTALL
@@ -231,23 +260,111 @@ class XavionCLI:
                 )
         except Exception as exc:
             self.console.print(f"[bold {COLOR_ERROR}]Error:[/] {exc}")
+            if attached_paths:
+                self._info("Attachments are still queued; use /images or /clearimages.")
         self.console.print()
 
+    def _attach_image(self, cmd_input: str):
+        """Queue an image path for the next message without loading it into memory."""
+        _, separator, raw_path = cmd_input.partition(":")
+        if not separator:
+            self._error('Usage: /image:/path/to/image.png')
+            return
+
+        raw_path = raw_path.strip()
+        if len(raw_path) >= 2 and raw_path[0] == raw_path[-1] and raw_path[0] in "\"'":
+            raw_path = raw_path[1:-1]
+        if not raw_path:
+            self._error('Usage: /image:/path/to/image.png')
+            return
+
+        if len(self.pending_images) >= MAX_IMAGES_PER_MESSAGE:
+            self._error(f"A message supports at most {MAX_IMAGES_PER_MESSAGE} images.")
+            return
+
+        try:
+            capabilities = self.ai.get_model_capabilities()
+        except Exception as exc:
+            self._error(f"Could not check model capabilities: {exc}")
+            return
+        if not capabilities.available:
+            self._error(
+                "Could not verify image support: "
+                + (capabilities.error or "Ollama capability lookup failed.")
+            )
+            return
+        if not capabilities.vision:
+            self._error(
+                f"Model '{self.ai.model_name}' does not support images. "
+                "Select a vision-capable model first."
+            )
+            return
+
+        path = Path(raw_path).expanduser()
+        if not path.is_file():
+            self._error(f"Image file not found: {path}")
+            return
+        try:
+            if path.stat().st_size > MAX_IMAGE_BYTES:
+                self._error("Image exceeds the 8 MiB limit.")
+                return
+            if path.stat().st_size == 0:
+                self._error("Image cannot be empty.")
+                return
+        except OSError as exc:
+            self._error(f"Could not read image: {exc}")
+            return
+
+        absolute_path = str(path.resolve())
+        if absolute_path in self.pending_images:
+            self._info("This image is already attached.")
+            return
+
+        self.pending_images.append(absolute_path)
+        self._info(
+            f"Image attached ({len(self.pending_images)}/{MAX_IMAGES_PER_MESSAGE}): "
+            f"{absolute_path}"
+        )
+        self._info("Write your next message to send it with the attached image(s).")
+
+    def _list_images(self):
+        if not self.pending_images:
+            self._info("No images are currently attached.")
+            return
+        self.console.print(Markdown("**Images pending for the next message:**"))
+        for index, image_path in enumerate(self.pending_images, start=1):
+            self.console.print(f"  {index}. {image_path}")
+
+    def _clear_images(self):
+        count = len(self.pending_images)
+        self.pending_images.clear()
+        self._info(f"Cleared {count} pending image(s).")
+
     def handle_command(self, cmd_input: str):
-        parts = cmd_input.lower().strip().split(":")
-        command = parts[0]
+        # Lowercase the command itself, never the arguments: Linux paths are case-sensitive.
+        raw_parts = cmd_input.strip().split(":")
+        command = raw_parts[0].lower()
+        parts = [command, *raw_parts[1:]]
 
         if command in ["/exit", "/quit"]:
             raise EOFError
         if command == "/help":
             self._show_help()
+        elif command == "/image":
+            self._attach_image(cmd_input)
+        elif command == "/images":
+            self._list_images()
+        elif command == "/clearimages":
+            self._clear_images()
         elif command == "/copy":
             self._copy_code_block(parts)
         elif command == "/new":
             session_id = self.ai.start_new_session()
+            self.pending_images.clear()
             self._info(f"Started new session: {session_id}")
         elif command == "/reset":
             self.ai.reset_history()
+            self.pending_images.clear()
             self._info("Conversation history has been cleared for this session.")
         elif command == "/debug":
             self.debug_mode = not self.debug_mode
@@ -259,8 +376,6 @@ class XavionCLI:
             self._select_model(parts)
         elif command == "/mode":
             self._select_mode(parts)
-        elif command == "/reasoning":
-            self._select_reasoning(parts)
         elif command == "/tone":
             self._select_tone(parts)
         elif command == "/sessions":
@@ -287,12 +402,17 @@ class XavionCLI:
 - `/exit` - Close the application
 - `/help` - Show this guide
 
+**Image Attachments:**
+- `/image:/path/to/image.png` - Attach an image to the next message
+- `/images` - List images waiting to be sent
+- `/clearimages` - Remove all pending image attachments
+- Supports up to 4 PNG, JPEG, or WebP images per message (8 MiB each)
+
 **Settings:**
 - `/debug` - Toggle debug mode
 - `/models` - List installed models
 - `/model:<name/idx>` - Switch model
 - `/mode:<name>` - Select auto, default, math, code, or translate
-- `/reasoning:<on/off>` - Enable or disable model reasoning
 - `/tone:<name>` - Select adaptive, casual, formal, sarcastic, or concise
 """
             )
@@ -333,6 +453,20 @@ class XavionCLI:
         message += "\n*Use `/model:<id>` to switch model.*"
         self.console.print(Markdown(message))
 
+    def _notify_pending_image_support(self):
+        if not self.pending_images:
+            return
+        try:
+            capabilities = self.ai.get_model_capabilities()
+        except Exception:
+            self._info("Images remain queued, but model capabilities could not be checked.")
+            return
+        if not capabilities.available or not capabilities.vision:
+            self._info(
+                "Images remain queued, but the selected model cannot currently process "
+                "them. Switch back to a vision-capable model or use /clearimages."
+            )
+
     def _select_model(self, parts):
         models = self.ai.list_available_models()
         if not models:
@@ -347,9 +481,11 @@ class XavionCLI:
             )
             self.ai.model_name = models[(current_index + 1) % len(models)]
             self._info(f"Model cycled to: {self.ai.model_name}")
+            self._notify_pending_image_support()
             return
 
-        target = parts[1].strip()
+        # Preserve Ollama tags such as qwen3.5:9b and llama3.1:8b.
+        target = ":".join(parts[1:]).strip()
         model = None
         if target.isdigit():
             index = int(target) - 1
@@ -361,6 +497,7 @@ class XavionCLI:
         if model:
             self.ai.model_name = model
             self._info(f"Model switched to: {model}")
+            self._notify_pending_image_support()
         else:
             self._error(f"Model '{target}' not found. Available: {', '.join(models)}")
 
@@ -378,30 +515,6 @@ class XavionCLI:
         self.intent_mode = new_mode
         self._info(f"Mode switched to: {new_mode}")
 
-
-    def _select_reasoning(self, parts):
-        if not self.ai.supports_reasoning():
-            self._error(
-                f"Model '{self.ai.model_name}' does not support reasoning."
-            )
-            return
-
-        if len(parts) == 1:
-            self._info(
-                f"Reasoning is currently {self.ai.reasoning_mode}."
-            )
-            return
-
-        mode = parts[1].strip()
-
-        if mode not in {"on", "off"}:
-            self._error("Invalid reasoning mode. Available: on, off")
-            return
-
-        self.ai.reasoning_mode = mode
-        self._info(f"Reasoning switched {mode}.")
-
-        
     def _select_tone(self, parts):
         tones = ["adaptive", "casual", "formal", "sarcastic", "concise"]
         if len(parts) == 1:
@@ -446,6 +559,7 @@ class XavionCLI:
                 target_id = self.last_sessions[index]["id"]
 
         if self.ai.load_session(target_id):
+            self.pending_images.clear()
             self._info(f"Loaded session: {target_id}")
         else:
             self._error(f"Failed to load session: {target_id}")
