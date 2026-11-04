@@ -314,10 +314,18 @@ CHECKERS = {
 class XavionEvaluator:
     """Run Xavion benchmark cases and score them with hybrid evaluation."""
 
-    def __init__(self, model_name: str, judge_model: str):
+    def __init__(
+        self,
+        model_name: str,
+        judge_model: str,
+        reasoning_mode: str = "off",
+    ):
         self.model_name = model_name
         self.judge_model = judge_model
-        self.ai = XavionAI(model_name=model_name)
+        self.ai = XavionAI(
+            model_name=model_name,
+            reasoning_mode=reasoning_mode,
+        )
         self.judge_llm = OllamaLLM(model=judge_model, temperature=0)
         self.judge_prompt = ChatPromptTemplate.from_template(
             """
@@ -604,6 +612,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--fail-fast", action="store_true", help="Stop after the first unstable failing test."
     )
+    parser.add_argument(
+        "--reasoning",
+        choices=["on", "off"],
+        default="off",
+        help="Enable or disable reasoning for the model under test.",
+    )
     return parser
 
 
@@ -654,13 +668,18 @@ def main() -> int:
         console.print("[bold red]Error:[/] --runs must be at least 1.")
         return 2
 
-    evaluator = XavionEvaluator(model_name, judge_model)
+    evaluator = XavionEvaluator(
+        model_name,
+        judge_model,
+        reasoning_mode=args.reasoning,
+    )
 
     console.print(
         Panel.fit(
             f"[bold white]{suite.get('benchmark_suite', 'Xavion Benchmark')}[/]\n"
             f"[grey70]{suite.get('description', '')}[/]\n\n"
             f"Model: [cyan]{model_name}[/]  Judge: [magenta]{judge_model}[/]  "
+            f"Reasoning: [yellow]{args.reasoning}[/]  "
             f"Runs/test: [yellow]{runs_per_test}[/]",
             title="XAVION AI STRESS TEST",
             border_style="cyan",
@@ -864,6 +883,7 @@ def main() -> int:
             "category_scores": category_scores,
             "category_stable_pass_rates": category_pass_rates,
             "tests": [asdict(result) for result in results],
+            "reasoning_mode": args.reasoning,
         }
         report_path.write_text(
             json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8"

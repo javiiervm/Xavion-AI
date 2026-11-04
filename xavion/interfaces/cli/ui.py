@@ -62,11 +62,17 @@ class XavionCLI:
     def _status_info(self) -> str:
         cwd = os.getcwd().replace(os.path.expanduser("~"), "~")
         debug_status = " [debug]" if self.debug_mode else ""
+        reasoning_status = (
+            self.ai.reasoning_mode
+            if self.ai.supports_reasoning()
+            else "unsupported"
+        )
         return (
             f" {cwd}    "
             f"<style fg='{COLOR_ACCENT}' class='bold'>/mode</style> ({self.intent_mode})    "
             f"<style fg='{COLOR_ACCENT}' class='bold'>/tone</style> ({self.tone_mode})    "
             f"<style fg='{COLOR_ACCENT}' class='bold'>/model</style> ({self.ai.model_name})"
+            f"<style fg='{COLOR_ACCENT}' class='bold'>/reasoning</style> ({reasoning_status})    "
             f"{debug_status}"
         )
 
@@ -79,10 +85,16 @@ class XavionCLI:
             "  [bold #CC5500]██[/][bold #D49A36]█[/][bold #FFFFFF]███[/][bold #D49A36]█[/][bold #CC5500]██[/]  \n"
             "   [bold #CC5500]▀▀[/][bold #D49A36]▀[/][bold #FFFFFF]▀[/][bold #D49A36]▀[/][bold #CC5500]▀▀[/]   \n"
         )
+        reasoning_status = (
+            self.ai.reasoning_mode
+            if self.ai.supports_reasoning()
+            else "unsupported"
+        )
         info = (
             f"\n{DISPLAY_NAME} CLI [bold {COLOR_SECONDARY}]v{VERSION}[/]\n\n"
             f"Model:  {self.ai.model_name} [bold {COLOR_ACCENT}]/model[/]\n"
             f"Mode:   {self.intent_mode} [bold {COLOR_ACCENT}]/mode[/]"
+            f"Reasoning: {reasoning_status} [bold {COLOR_ACCENT}]/reasoning[/]\n"
         )
         grid = Table.grid(padding=(0, 3))
         grid.add_row(logo, info)
@@ -247,6 +259,8 @@ class XavionCLI:
             self._select_model(parts)
         elif command == "/mode":
             self._select_mode(parts)
+        elif command == "/reasoning":
+            self._select_reasoning(parts)
         elif command == "/tone":
             self._select_tone(parts)
         elif command == "/sessions":
@@ -278,6 +292,7 @@ class XavionCLI:
 - `/models` - List installed models
 - `/model:<name/idx>` - Switch model
 - `/mode:<name>` - Select auto, default, math, code, or translate
+- `/reasoning:<on/off>` - Enable or disable model reasoning
 - `/tone:<name>` - Select adaptive, casual, formal, sarcastic, or concise
 """
             )
@@ -362,6 +377,29 @@ class XavionCLI:
 
         self.intent_mode = new_mode
         self._info(f"Mode switched to: {new_mode}")
+
+
+    def _select_reasoning(self, parts):
+        if not self.ai.supports_reasoning():
+            self._error(
+                f"Model '{self.ai.model_name}' does not support reasoning."
+            )
+            return
+
+        if len(parts) == 1:
+            self._info(
+                f"Reasoning is currently {self.ai.reasoning_mode}."
+            )
+            return
+
+        mode = parts[1].strip()
+
+        if mode not in {"on", "off"}:
+            self._error("Invalid reasoning mode. Available: on, off")
+            return
+
+        self.ai.reasoning_mode = mode
+        self._info(f"Reasoning switched {mode}.")
 
         
     def _select_tone(self, parts):
