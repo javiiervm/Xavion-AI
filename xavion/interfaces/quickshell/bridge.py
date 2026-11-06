@@ -96,31 +96,50 @@ def handle_command(ai: XavionAI, command: dict[str, Any]) -> None:
         intent_mode = str(command.get("intent_mode", "auto"))
         tone_mode = str(command.get("tone_mode", "adaptive"))
 
-        thinking = (
-            supports_reasoning(ai)
-            and reasoning_mode(ai) == "on"
-        )
-
-        emit("start", thinking=thinking)
-
+        # Stream the core's typed events. The bridge is the only Quickshell-
+        # specific adapter: reasoning logic stays in XavionAI.
         try:
-            for chunk in ai.chat_stream(
+            for event in ai.chat_events(
                 message,
                 intent_mode=intent_mode,
                 tone_mode=tone_mode,
                 images=images,
             ):
-                if chunk:
-                    emit("chunk", text=chunk)
+                event_type = event.get("type")
 
-            # Return attachment metadata, never raw base64 data.
-            attachments = (
-                ai.history[-1].get("images", [])
-                if ai.history
-                else []
-            )
-
-            emit("done", images=attachments)
+                if event_type == "start":
+                    # Keep the legacy 'thinking' field for older consumers,
+                    # but only signal real thinking via reasoning_start below.
+                    emit(
+                        "start",
+                        thinking=False,
+                        reasoning_mode=event.get("reasoning_mode", "off"),
+                        reasoning_enabled=bool(event.get("reasoning_enabled", False)),
+                        reasoning_reason=str(event.get("reasoning_reason", "")),
+                    )
+                elif event_type in {
+                    "reasoning_start",
+                    "reasoning_end",
+                    "response_start",
+                }:
+                    emit(event_type)
+                elif event_type == "reasoning_chunk":
+                    # Never include reasoning text in the final assistant bubble.
+                    if event.get("text"):
+                        emit("reasoning_chunk", text=event["text"])
+                elif event_type == "response_chunk":
+                    # Keep the established 'chunk' contract for both Xavion
+                    # views (embedded launcher and legacy panel).
+                    if event.get("text"):
+                        emit("chunk", text=event["text"])
+                elif event_type == "done":
+                    # Metadata only: never forward raw base64 attachments.
+                    emit(
+                        "done",
+                        images=event.get("images", []),
+                        reasoning_enabled=bool(event.get("reasoning_enabled", False)),
+                        reasoning_used=bool(event.get("reasoning_used", False)),
+                    )
 
         except Exception as exc:
             emit("error", message=str(exc))
@@ -326,22 +345,15 @@ def handle_command(ai: XavionAI, command: dict[str, Any]) -> None:
     if command_type == "set_reasoning":
         mode = str(command.get("mode", "")).strip().lower()
 
-        if mode not in {"on", "off"}:
+        if mode not in {"auto", "on", "off"}:
             emit(
                 "error",
-                message="Reasoning mode must be 'on' or 'off'.",
+                message="Reasoning mode must be 'auto', 'on', or 'off'.",
             )
             return
 
-        if not supports_reasoning(ai):
-            emit(
-                "error",
-                message=(
-                    f"Model '{ai.model_name}' "
-                    "does not support reasoning."
-                ),
-            )
-            return
+        # The preference is shared between frontends and can be retained even
+        # when the currently selected model has no reasoning capability.
 
         if not hasattr(ai, "reasoning_mode"):
             emit(
@@ -358,7 +370,7 @@ def handle_command(ai: XavionAI, command: dict[str, Any]) -> None:
         emit(
             "reasoning_changed",
             mode=ai.reasoning_mode,
-            supported=True,
+            supported=supports_reasoning(ai),
         )
         return
 
