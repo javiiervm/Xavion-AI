@@ -1,5 +1,7 @@
 """Frontend-independent conversation engine for Xavion."""
 
+from __future__ import annotations
+
 import json
 import time
 from pathlib import Path
@@ -9,6 +11,7 @@ import requests
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_ollama import ChatOllama
 
+from xavion.core.config import get_reasoning_mode, set_reasoning_mode
 from xavion.core.constants import (
     DEFAULT_SYSTEM_KNOWLEDGE,
     INSTRUCTION_MAP,
@@ -18,6 +21,7 @@ from xavion.core.constants import (
 from xavion.core.images import ImageStore
 from xavion.core.intent import IntentDetector
 from xavion.core.model_capabilities import ModelCapabilities, OllamaCapabilityProvider
+from xavion.core.reasoning import ReasoningDecision, decide_reasoning
 
 
 class XavionAI:
@@ -41,7 +45,10 @@ class XavionAI:
         self.data_dir = Path(data_dir)
         self.images = ImageStore(self.data_dir)
         self.capability_provider = capability_provider or OllamaCapabilityProvider()
-        self.reasoning_mode = "off"
+        # Shared persistent preference. "off" remains the safe default for
+        # existing installations until the CLI and Quickshell UIs expose Auto.
+        self._reasoning_mode = get_reasoning_mode()
+        self.last_reasoning_decision: ReasoningDecision | None = None
 
     @property
     def model_name(self):
@@ -54,6 +61,19 @@ class XavionAI:
         self._model_name = value.strip()
 
     @property
+    def reasoning_mode(self) -> str:
+        # Pick up changes made by another running frontend before each request.
+        self._reasoning_mode = get_reasoning_mode()
+        return self._reasoning_mode
+
+    @reasoning_mode.setter
+    def reasoning_mode(self, value: str) -> None:
+        # Property assignment remains compatible with existing frontends.
+        # Persist first, so an I/O failure does not desynchronize this instance.
+        set_reasoning_mode(value)
+        self._reasoning_mode = value
+
+    @property
     def debug_callback(self):
         return self._debug_callback
 
@@ -63,32 +83,69 @@ class XavionAI:
         self.detector.debug_callback = callback
 
     def get_model_capabilities(self, *, refresh: bool = False) -> ModelCapabilities:
-        """Discover whether the active model supports vision and other features."""
+        """Discover active model features using Ollama."""
         return self.capability_provider.get(self.model_name, refresh=refresh)
 
     def supports_reasoning(self) -> bool:
-        """Check whether the active model supports reasoning."""
+        """Return whether Ollama reports thinking support for this model."""
         capabilities = self.get_model_capabilities()
         return capabilities.available and capabilities.thinking
+
+    def decide_reasoning(
+        self,
+        message: str,
+        *,
+        intent_mode: str = "auto",
+        has_images: bool = False,
+    ) -> ReasoningDecision:
+        """Preview effective reasoning without making an LLM request."""
+        if intent_mode == "auto":
+            intent, _ = self.detector.get_intent(message)
+        else:
+            intent = intent_mode
+        return self._decide_reasoning(message, intent=intent, has_images=has_images)
+
+    def _decide_reasoning(
+        self,
+        message: str,
+        *,
+        intent: str,
+        has_images: bool,
+    ) -> ReasoningDecision:
+        return decide_reasoning(
+            message,
+            mode=self.reasoning_mode,
+            supported=self.supports_reasoning(),
+            intent=intent,
+            history=self.history,
+            has_images=has_images,
+        )
 
     def _get_model(
         self,
         callbacks: Optional[List[Any]] = None,
         *,
         num_ctx: int = 4096,
+        reasoning_enabled: bool | None = None,
     ):
+        """Build a ChatOllama instance for one request's effective policy."""
+        supported = self.supports_reasoning()
+        if not supported:
+            reasoning = None
+        elif reasoning_enabled is not None:
+            reasoning = reasoning_enabled
+        else:
+            # Preserve compatibility for direct callers of the private method.
+            reasoning = self.reasoning_mode == "on"
+
         return ChatOllama(
             model=self.model_name,
             callbacks=callbacks,
             num_ctx=num_ctx,
-            num_predict=1024,
+            num_predict=2048 if reasoning is True else 1024,
             keep_alive=OLLAMA_KEEP_ALIVE,
             temperature=0.6,
-            reasoning=(
-                self.reasoning_mode == "on"
-                if self.supports_reasoning()
-                else None
-            ),
+            reasoning=reasoning,
         )
 
     def list_available_models(self) -> List[str]:
@@ -148,18 +205,36 @@ class XavionAI:
         messages.append(HumanMessage(content=current_content))
         return messages, intent
 
-    def chat_stream(
+    @staticmethod
+    def _extract_text(content: Any) -> str:
+        """Accept plain text and LangChain's list-of-content-blocks format."""
+        if isinstance(content, str):
+            return content
+        if isinstance(content, list):
+            return "".join(
+                part.get("text", "")
+                for part in content
+                if isinstance(part, dict)
+                and part.get("type") == "text"
+                and isinstance(part.get("text"), str)
+            )
+        return ""
+
+    def chat_events(
         self,
         message: str,
         intent_mode: str = "auto",
         tone_mode: str = "adaptive",
         images: Optional[List[Any]] = None,
-    ) -> Generator[str, None, None]:
-        """Stream a reply, optionally using image attachments from any frontend.
+    ) -> Generator[Dict[str, Any], None, None]:
+        """Yield typed events, keeping thinking separate from final answer.
 
-        Image inputs: bytes, {"path": "/path/to/image.png"}, or
-        {"data": "<base64>", "mime_type": "image/png"}.
-        The data field also accepts data:image/...;base64,... URIs.
+        Events: start, reasoning_start, reasoning_chunk, reasoning_end,
+        response_start, response_chunk, done.
+
+        Only 'response_chunk' text is persisted as assistant history; the
+        reasoning trace is kept separate and not saved in session JSON.
+        Image inputs follow the same format as chat_stream().
         """
         if not isinstance(message, str):
             raise ValueError("Message must be a string.")
@@ -188,25 +263,54 @@ class XavionAI:
         try:
             attachments = self.images.save_many(images)
             prompt = message.strip() or "Describe the attached image(s)."
-            messages, _ = self._prepare_messages(
+            messages, intent = self._prepare_messages(
                 prompt, intent_mode, tone_mode, images=attachments
             )
-            has_images = bool(images) or any(
+            decision = self._decide_reasoning(
+                prompt,
+                intent=intent,
+                has_images=bool(images),
+            )
+            self.last_reasoning_decision = decision
+            has_images_in_context = bool(images) or any(
                 entry.get("images") for entry in self.history
             )
-
             model = self._get_model(
-                num_ctx=8192 if has_images else 4096
+                num_ctx=8192 if has_images_in_context else 4096,
+                reasoning_enabled=decision.enabled,
             )
 
+            yield {
+                "type": "start",
+                "reasoning_mode": decision.mode,
+                "reasoning_enabled": decision.enabled,
+                "reasoning_reason": decision.reason,
+            }
+
             full_response = ""
+            reasoning_started = False
+            response_started = False
             try:
                 for chunk in model.stream(messages):
-                    text = chunk.content
-                    if not isinstance(text, str):
-                        text = str(text)
-                    full_response += text
-                    yield text
+                    # ChatOllama stores thinking in additional_kwargs whenever
+                    # reasoning=True. This field is independent from content.
+                    extras = getattr(chunk, "additional_kwargs", {}) or {}
+                    thinking = extras.get("reasoning_content", "")
+                    if isinstance(thinking, str) and thinking:
+                        if not reasoning_started:
+                            reasoning_started = True
+                            yield {"type": "reasoning_start"}
+                        yield {"type": "reasoning_chunk", "text": thinking}
+
+                    answer = self._extract_text(getattr(chunk, "content", ""))
+                    if answer:
+                        if reasoning_started and not response_started:
+                            yield {"type": "reasoning_end"}
+                        if not response_started:
+                            response_started = True
+                            yield {"type": "response_start"}
+                        full_response += answer
+                        yield {"type": "response_chunk", "text": answer}
             except Exception as exc:
                 if "404" in str(exc) and self.model_name in str(exc):
                     available = self.list_available_models()
@@ -220,6 +324,9 @@ class XavionAI:
                     raise Exception(error_message) from exc
                 raise
 
+            if reasoning_started and not response_started:
+                yield {"type": "reasoning_end"}
+
             entry: Dict[str, Any] = {"user": prompt, "assistant": full_response}
             if attachments:
                 entry["images"] = attachments
@@ -232,13 +339,44 @@ class XavionAI:
                 raise
 
             completed = True
+            yield {
+                "type": "done",
+                "reasoning_enabled": decision.enabled,
+                "reasoning_used": reasoning_started,
+                "images": attachments,
+            }
         finally:
             # A canceled or failed request should not leave orphan attachments.
             if not completed:
                 self.images.remove_many(attachments)
 
+    def chat_stream(
+        self,
+        message: str,
+        intent_mode: str = "auto",
+        tone_mode: str = "adaptive",
+        images: Optional[List[Any]] = None,
+    ) -> Generator[str, None, None]:
+        """Backwards-compatible text-only stream for existing frontends.
+
+        Images: bytes, {"path": "/path/to/image.png"}, or
+        {"data": "<base64>", "mime_type": "image/png"}.
+        """
+        events = self.chat_events(
+            message, intent_mode=intent_mode, tone_mode=tone_mode, images=images
+        )
+        try:
+            for event in events:
+                if event["type"] == "response_chunk":
+                    yield event["text"]
+        finally:
+            # Closing the legacy generator must also close the underlying
+            # event stream so canceled requests clean up image attachments.
+            events.close()
+
     def reset_history(self):
         self.history = []
+        self.last_reasoning_decision = None
 
     def start_new_session(self):
         self.reset_history()
@@ -275,6 +413,7 @@ class XavionAI:
                 data = json.load(file)
                 self.model_name = data.get("model", self.model_name)
                 self.history = data.get("history", [])
+                self.last_reasoning_decision = None
                 self.current_session_id = session_id
                 return True
         return False
